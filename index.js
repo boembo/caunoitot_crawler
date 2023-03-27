@@ -1,29 +1,27 @@
-const puppeteer = require('puppeteer');
-const chrome = require('chrome-cookies-secure');
+// import puppeteer library
+const puppeteer = require('puppeteer')
 
-const url = 'https://recruitery.co';
-
-const getCookies = (callback) => {
-    chrome.getCookies(url, 'puppeteer', function(err, cookies) {
-        if (err) {
-            console.log(err, 'error');
-            return
-        }
-        console.log(cookies, 'cookies');
-        callback(cookies);
-    }, 'Default') // e.g. 'Profile 2'
+async function run(){
+    // First, we must launch a browser instance
+    const browser = await puppeteer.launch({
+        // Headless option allows us to disable visible GUI, so the browser runs in the "background"
+        // for development lets keep this to true so we can see what's going on but in
+        // on a server we must set this to true
+        headless: true,
+        // This setting allows us to scrape non-https websites easier
+        ignoreHTTPSErrors: true,
+    })
+    // then we need to start a browser tab
+    let page = await browser.newPage();
+    // and tell it to go to some URL
+    await page.goto('http://httpbin.org/html', {
+        waitUntil: 'domcontentloaded',
+    });
+    // print html content of the website
+    console.log(await page.content());
+    // close everything
+    await page.close();
+    await browser.close();
 }
 
-// find profiles at ~/Library/Application Support/Google/Chrome
-
-getCookies(async (cookies) => {
-    const browser = await puppeteer.launch({
-        headless: false
-    });
-    const page = await browser.newPage();
-
-    await page.setCookie(...cookies);
-    await page.goto(url);
-    await page.screenshot("examples.png");
-    browser.close()
-});
+run();
