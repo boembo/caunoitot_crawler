@@ -1,5 +1,13 @@
 const puppeteer = require('puppeteer')
 const fs = require('fs').promises;
+const mysql = require('mysql');
+
+const connection = mysql.createConnection({
+  host: 'localhost',
+  user: 'username',
+  password: 'password',
+  database: 'database_name',
+});
 
 async function run(){
     // First, we must launch a browser instance
@@ -49,7 +57,24 @@ async function run(){
         const sel = ".flex--item.mb12.fs-headline2.lh-xs";
         const el = await page.waitForSelector(sel);
         // usernames.push(await el.evaluate(el => el.textContent.trim()));
+
+        // chatGPT example
+        // const anchors = await page.evaluate(() => {
+        //     const anchorNodes = document.querySelectorAll('ul a'); // select all the anchor tags inside UL elements
+        //     const anchorArray = Array.from(anchorNodes); // convert the NodeList to an Array
+        //     const hrefs = anchorArray.map(anchor => anchor.href); // extract the href attribute from each anchor
+        //     return hrefs; // return the array of hrefs
+        //   });
     }
+
+      // insert each URL into the database
+    //   anchors.forEach(href => {
+    //     connection.query(`INSERT INTO example (postname) VALUES ('${href}')`, (error, results, fields) => {
+    //       if (error) throw error;
+    //     });
+    //   });
+  
+      console.log(`Page ${i} anchors inserted into database`); 
 
       console.log(maxPage); // output the value
 
