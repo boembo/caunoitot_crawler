@@ -4,11 +4,12 @@ const fs = require('fs').promises;
 async function run(){
     // First, we must launch a browser instance
     const browser = await puppeteer.launch({
-        headless: true,
+        headless: false,
         ignoreHTTPSErrors: true,
         //executablePath: 'C:/Program Files/Google/Chrome/Application/chrome.exe',
        // args: ["--lang=en-US,en", '--no-sandbox', '--disable-setuid-sandbox', '--disable-extensions']
         // userDataDir:"C:\\Users\\rin rin\\AppData\\Local\\Chromium\\User Data"
+        defaultViewport: null,
     })
 
     let page = await browser.newPage();
@@ -25,16 +26,38 @@ async function run(){
       }, lStorage);
       
     await page.setCookie(...cookies.cookies);
-    // and tell it to go to some URL
-    await page.goto('https://app.recruitery.co/jobs', {
+    //selected Ha noi, HCM, Japan, Danang
+    //Just Select Headhunting
+    const startPage = 1;
+    const recruiteryURL = "https://app.recruitery.co/jobs?location=1%2C1019%2C2%2C1006%2C3&page=";
+    await page.goto('https://app.recruitery.co/jobs?page=1&location=1%2C1019%2C2%2C1006%2C3', {
         waitUntil: 'networkidle0',
     });
+    //Pagination UL
+    const maxPage = await page.evaluate(() => {
+        const ul = document.querySelector('ul.ant-pagination'); // select the UL element with class name 'ant-pagination'
+        const li = ul.children[ul.children.length - 3]; // select the 2nd last LI child
+        const a = li.querySelector('a'); // select the anchor element inside the LI
+        return a.textContent.trim();
+      });
+      
+      for (let i = startPage; i <= maxPage; i++) {
+        const url = recruiteryURL + i;
+        await page.goto(`${url}`);
+        await page.waitForNavigation({ waitUntil: 'networkidle2' });
+
+        const sel = ".flex--item.mb12.fs-headline2.lh-xs";
+        const el = await page.waitForSelector(sel);
+        // usernames.push(await el.evaluate(el => el.textContent.trim()));
+    }
+
+      console.log(maxPage); // output the value
 
     // print html content of the website
-    await page.screenshot({path: 'example.png'});
-    
-    await page.close();
-    await browser.close();
+    // await page.screenshot({path: 'example.png'});
+
+    // await page.close();
+    // await browser.close();
 }
 
 run();
