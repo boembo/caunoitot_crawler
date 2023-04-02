@@ -10,6 +10,8 @@
   "license": "ISC",
   "dependencies": {
     "chrome-cookies-secure": "^2.0.0",
-    "puppeteer": "^19.8.0"
+    "mysql": "^2.18.1",
+    "puppeteer": "^19.8.0",
+    "puppeteer-core": "^19.8.1"
   }
 }
