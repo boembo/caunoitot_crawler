@@ -80,43 +80,63 @@ async function run(){
             await page.waitForNavigation({ waitUntil: 'networkidle2' });
     
        
-            const headerAttributes = ["Gross Monthly salary"];
+            const headerAttributes = {
+              gross_month_salary: "Gross Monthly salary",
+              total_vacancies: "Total vacancies:"
 
-            for (const headerAttribute of headerAttributes) {
+            };
+
+            for (const [key, headerAttribute] of Object.entries(headerAttributes)) {
                 const element = await page.$x(`//div[@class='ant-descriptions-item-container']//div[contains(text(), '${headerAttribute}')]`);
                 if (element.length > 0) {
                   const nextElement = await element[0].$x('following-sibling::div[1]');
                   if (nextElement.length > 0) {
                     const content = await page.evaluate(el => el.textContent, nextElement[0]);
-                    console.log("Content of the div next to 'Gross Monthly salary':", content.trim());
+                    console.log(`Content of the div next to '${headerAttribute}':`, content.trim());
                   } else {
-                    console.log("Div next to 'Gross Monthly salary' not found!");
+                    console.log(`Div next to '${headerAttribute}' not found!`);
                   }
                 } else {
-                  console.log("Div containing 'Gross Monthly salary' not found!");
+                  console.log(`Div containing '${headerAttribute}' not found!`);
                 }
             }
             
-        // }
-       // console.log(jobLinks);
+            //
+            // function funcOk(){            
+            //   async.eachSeries(textos, async (text) => {                     
+      
+            //       await page.type('#input1', text);
+      
+            //       await page.keyboard.press('Enter');                 
+      
+            //       /*get table results*/
+            //       const data = page.evaluate(() => {
+            //           const tds = Array.from(document.querySelectorAll('table tr td a'))
+            //           return tds.map(a => {
+            //               var txt = a.innerHTML;
+            //               return txt.replace(/<a [^>]+>[^<]*<\/a>/g, '').trim();
+            //           });
+            //       });
+            //       /*get table results*/
+      
+            //       /*get only valid results*/
+            //       let j = 0;
+            //       for (let z = 0; z < data.length; z++) {
+            //           if(data[z] == someVar[i].num.toString()){
+            //               j = j + 1;          
+            //           }
+            //           if(j <= 14){
+            //               console.log(data[z]);
+            //               j = j + 1;
+            //           }
+            //       }
+            //       /*get only valid results*/
+      
+            //       return Promise.resolve()
+            //   })
+          }
 
-        // const sel = ".ant-row .ant-col";
-        // const el = await page.waitForSelector(sel);
-        // usernames.push(await el.evaluate(el => el.textContent.trim()));
-
-        // chatGPT example
-        // const anchors = await page.evaluate(() => {
-        //     const anchorNodes = document.querySelectorAll('ul a'); // select all the anchor tags inside UL elements
-        //     const anchorArray = Array.from(anchorNodes); // convert the NodeList to an Array
-        //     const hrefs = anchorArray.map(anchor => anchor.href); // extract the href attribute from each anchor
-        //     return hrefs; // return the array of hrefs
-        //   });
-        // console.log(el); 
-
-
-    //   console.log(`Page ${i} anchors inserted into database`); 
-
-    }
+    // }
 
     // insert each URL into the database
     //   anchors.forEach(href => {
