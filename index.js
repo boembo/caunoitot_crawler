@@ -42,20 +42,66 @@ async function run(){
         waitUntil: 'networkidle0',
     });
     //Pagination UL
-    const maxPage = await page.evaluate(() => {
-        const ul = document.querySelector('ul.ant-pagination'); // select the UL element with class name 'ant-pagination'
-        const li = ul.children[ul.children.length - 3]; // select the 2nd last LI child
-        const a = li.querySelector('a'); // select the anchor element inside the LI
-        return a.textContent.trim();
-      });
-      
-      for (let i = startPage; i <= maxPage; i++) {
-        const url = recruiteryURL + i;
-        await page.goto(`${url}`);
-        await page.waitForNavigation({ waitUntil: 'networkidle2' });
+    //real code
+    // const maxPage = await page.evaluate(() => {
+    //     const ul = document.querySelector('ul.ant-pagination'); // select the UL element with class name 'ant-pagination'
+    //     const li = ul.children[ul.children.length - 3]; // select the 2nd last LI child
+    //     const a = li.querySelector('a'); // select the anchor element inside the LI
+    //     return a.textContent.trim();
+    //   });
 
-        const sel = ".flex--item.mb12.fs-headline2.lh-xs";
-        const el = await page.waitForSelector(sel);
+    // const maxPage = 1;
+      
+    //   for (let i = startPage; i <= maxPage; i++) {
+    //     const url = recruiteryURL + i;
+    //     await page.goto(`${url}`);
+    //     await page.waitForNavigation({ waitUntil: 'networkidle2' });
+
+
+
+        // const jobLinks = await page.$$eval('.ant-row div a', (anchors, searchText) => {
+        //     const filteredAnchors = [];
+        //     for (let i = 0; i < anchors.length; i++) {
+        //       const anchor = anchors[i];
+        //       if (anchor.textContent.trim() === searchText) {
+        //         filteredAnchors.push(anchor.href);
+        //       }
+        //     }
+        //     return filteredAnchors;
+        //   }, 'Refer and earn');
+
+
+        // for (const jobLink of jobLinks) {
+
+        // await page.goto(jobLink);
+        // await page.waitForNavigation({ waitUntil: 'networkidle2' });
+
+            await page.goto("https://app.recruitery.co/jobs/9286");
+            await page.waitForNavigation({ waitUntil: 'networkidle2' });
+    
+       
+            const headerAttributes = ["Gross Monthly salary"];
+
+            for (const headerAttribute of headerAttributes) {
+                const element = await page.$x(`//div[@class='ant-descriptions-item-container']//div[contains(text(), '${headerAttribute}')]`);
+                if (element.length > 0) {
+                  const nextElement = await element[0].$x('following-sibling::div[1]');
+                  if (nextElement.length > 0) {
+                    const content = await page.evaluate(el => el.textContent, nextElement[0]);
+                    console.log("Content of the div next to 'Gross Monthly salary':", content.trim());
+                  } else {
+                    console.log("Div next to 'Gross Monthly salary' not found!");
+                  }
+                } else {
+                  console.log("Div containing 'Gross Monthly salary' not found!");
+                }
+            }
+            
+        // }
+       // console.log(jobLinks);
+
+        // const sel = ".ant-row .ant-col";
+        // const el = await page.waitForSelector(sel);
         // usernames.push(await el.evaluate(el => el.textContent.trim()));
 
         // chatGPT example
@@ -65,24 +111,27 @@ async function run(){
         //     const hrefs = anchorArray.map(anchor => anchor.href); // extract the href attribute from each anchor
         //     return hrefs; // return the array of hrefs
         //   });
+        // console.log(el); 
+
+
+    //   console.log(`Page ${i} anchors inserted into database`); 
+
     }
 
-      // insert each URL into the database
+    // insert each URL into the database
     //   anchors.forEach(href => {
     //     connection.query(`INSERT INTO example (postname) VALUES ('${href}')`, (error, results, fields) => {
     //       if (error) throw error;
     //     });
     //   });
   
-      console.log(`Page ${i} anchors inserted into database`); 
 
-      console.log(maxPage); // output the value
 
     // print html content of the website
     // await page.screenshot({path: 'example.png'});
 
     // await page.close();
     // await browser.close();
-}
+// }
 
 run();
