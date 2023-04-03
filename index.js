@@ -1,6 +1,7 @@
 const puppeteer = require('puppeteer')
 const fs = require('fs').promises;
 const mysql = require('mysql');
+const path = require('path');
 
 const connection = mysql.createConnection({
   host: 'localhost',
@@ -8,6 +9,23 @@ const connection = mysql.createConnection({
   password: 'password',
   database: 'database_name',
 });
+//To convert from detail Title to DB column
+const jobContentAttributes = {
+  "Interview process": "interview_process",
+  "Report to": "report_to",
+  "Preferred skills and experiences": "preferred_skill",
+  "Job overview and responsibility": "job_responsibility",              
+};
+
+const headerAttributes = {
+  gross_month_salary: "Gross Monthly salary",
+  total_vacancies: "Total vacancies:",
+  level: "Level",
+  employment_type: "Employment type",
+  address: "Address",
+  is_it_job: "Types",
+};
+
 
 async function run(){
     // First, we must launch a browser instance
@@ -18,9 +36,10 @@ async function run(){
        // args: ["--lang=en-US,en", '--no-sandbox', '--disable-setuid-sandbox', '--disable-extensions']
         // userDataDir:"C:\\Users\\rin rin\\AppData\\Local\\Chromium\\User Data"
         defaultViewport: null,
+        // downloadsPath: './downloads',
     })
 
-    let page = await browser.newPage();
+    const page = await browser.newPage();
     const cookiesString = await fs.readFile('./cookie.json');
     const cookies = JSON.parse(cookiesString);
 
@@ -41,6 +60,8 @@ async function run(){
     await page.goto('https://app.recruitery.co/jobs?page=1&location=1%2C1019%2C2%2C1006%2C3', {
         waitUntil: 'networkidle0',
     });
+
+
     //Pagination UL
     //real code
     // const maxPage = await page.evaluate(() => {
@@ -50,6 +71,7 @@ async function run(){
     //     return a.textContent.trim();
     //   });
 
+    //test with limited page 
     // const maxPage = 1;
       
     //   for (let i = startPage; i <= maxPage; i++) {
@@ -75,20 +97,15 @@ async function run(){
 
         // await page.goto(jobLink);
         // await page.waitForNavigation({ waitUntil: 'networkidle2' });
-
+        
+  
             await page.goto("https://app.recruitery.co/jobs/9286");
             await page.waitForNavigation({ waitUntil: 'networkidle2' });
-    
-       
-            const headerAttributes = {
-              gross_month_salary: "Gross Monthly salary",
-              total_vacancies: "Total vacancies:",
-              level: "Level",
-              employment_type: "Employment type",
-              address: "Address",
-              is_it_job: "Types",
-            };
 
+            const client = await page.target().createCDPSession(); 
+            await client.send('Page.setDownloadBehavior', { behavior: 'allow', downloadPath: path.resolve('./downloads'),  });
+    
+            //GET JOB HEADER ATTRIBUTES
             for (const [key, headerAttribute] of Object.entries(headerAttributes)) {
                 const element = await page.$x(`//div[@class='ant-descriptions-item-container']//div[contains(text(), '${headerAttribute}')]`);
                 if (element.length > 0) {
@@ -103,8 +120,9 @@ async function run(){
                   console.log(`Div containing '${headerAttribute}' not found!`);
                 }
             }
+            //END JOB HEADER ATTRIBUTES
 
-            
+            //GET JOB BENEFIT ATTRIBUTES
             // Find the div that contains the text "job-description_job-description" in its class
             const benefitDivSelector = 'div[class*="job-description_job-description"]';
             // Get all the h4 elements with class ant-list-item-meta-title inside the selected div
@@ -118,9 +136,9 @@ async function run(){
               });
             });
             console.log(benefitElements);
+            //END JOB BENEFIT ATTRIBUTES
 
-
-            
+            //GET JOB CONTENT 
             const jobContentSelector = 'h3[class*="edit-summary-view_edit-summary-view__heading"]';
             const jobContentElements = await page.$$eval(`${jobContentSelector}`, titles => {
               const jobContents = {};
@@ -133,10 +151,33 @@ async function run(){
               });
               return jobContents;
             });
-            console.log(jobContentElements);
-            
-          }
+            //END JOB CONTENT
 
+            //LISTEN FILE DOWNLOAD
+            page.on('response', async response => {
+              //check for "Content-Disposition"
+              const disposition = response.headers()['content-disposition'];
+            
+              if (disposition && disposition.indexOf('attachment') !== -1) {
+                var filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+                var matches = filenameRegex.exec(disposition);
+                if (matches != null && matches[1]) { 
+                  
+                  const filename = 'example.pdf';
+                  await response.buffer().then(buffer => {
+                    // console.log(buffer.toString());
+                    const pdfBuffer = Buffer.from(buffer, 'base64');
+                    require('fs').writeFileSync("./downloads/" + filename, pdfBuffer);
+                  });
+                  console.log(`Downloaded file: ${filename}`);
+
+                  await browser.close();
+                }
+              }
+            });
+            //CLICK DOWNLOAD FILE 
+            await page.click('.ant-card-extra .ant-space-item:first-child'); // some button that triggers file selection
+          
     // }
 
     // insert each URL into the database
@@ -145,14 +186,10 @@ async function run(){
     //       if (error) throw error;
     //     });
     //   });
-  
-
-
-    // print html content of the website
-    // await page.screenshot({path: 'example.png'});
 
     // await page.close();
     // await browser.close();
 // }
+}
 
 run();
