@@ -82,8 +82,11 @@ async function run(){
        
             const headerAttributes = {
               gross_month_salary: "Gross Monthly salary",
-              total_vacancies: "Total vacancies:"
-
+              total_vacancies: "Total vacancies:",
+              level: "Level",
+              employment_type: "Employment type",
+              address: "Address",
+              is_it_job: "Types",
             };
 
             for (const [key, headerAttribute] of Object.entries(headerAttributes)) {
@@ -100,40 +103,38 @@ async function run(){
                   console.log(`Div containing '${headerAttribute}' not found!`);
                 }
             }
+
             
-            //
-            // function funcOk(){            
-            //   async.eachSeries(textos, async (text) => {                     
-      
-            //       await page.type('#input1', text);
-      
-            //       await page.keyboard.press('Enter');                 
-      
-            //       /*get table results*/
-            //       const data = page.evaluate(() => {
-            //           const tds = Array.from(document.querySelectorAll('table tr td a'))
-            //           return tds.map(a => {
-            //               var txt = a.innerHTML;
-            //               return txt.replace(/<a [^>]+>[^<]*<\/a>/g, '').trim();
-            //           });
-            //       });
-            //       /*get table results*/
-      
-            //       /*get only valid results*/
-            //       let j = 0;
-            //       for (let z = 0; z < data.length; z++) {
-            //           if(data[z] == someVar[i].num.toString()){
-            //               j = j + 1;          
-            //           }
-            //           if(j <= 14){
-            //               console.log(data[z]);
-            //               j = j + 1;
-            //           }
-            //       }
-            //       /*get only valid results*/
-      
-            //       return Promise.resolve()
-            //   })
+            // Find the div that contains the text "job-description_job-description" in its class
+            const benefitDivSelector = 'div[class*="job-description_job-description"]';
+            // Get all the h4 elements with class ant-list-item-meta-title inside the selected div
+            // const benefitElements = await page.$$(`${benefitDivSelector} h4.ant-list-item-meta-title`);
+            const benefitElements = await page.$$eval(`${benefitDivSelector} h4.ant-list-item-meta-title`, titles => {
+              return titles.map(title => {
+                const titleText = title.textContent.trim();
+                const nextSibling = title.nextElementSibling;
+                const nextSiblingText = nextSibling ? nextSibling.textContent.trim() : '';
+                return [titleText, nextSiblingText];
+              });
+            });
+            console.log(benefitElements);
+
+
+            
+            const jobContentSelector = 'h3[class*="edit-summary-view_edit-summary-view__heading"]';
+            const jobContentElements = await page.$$eval(`${jobContentSelector}`, titles => {
+              const jobContents = {};
+
+              titles.forEach(title => {
+                const titleText = title.textContent.trim();
+                const nextSibling = title.nextElementSibling;
+                const nextSiblingText = nextSibling ? nextSibling.textContent.trim() : '';
+                jobContents[titleText] = nextSiblingText;
+              });
+              return jobContents;
+            });
+            console.log(jobContentElements);
+            
           }
 
     // }
