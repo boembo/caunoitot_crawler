@@ -170,8 +170,8 @@ async function run(){
                     require('fs').writeFileSync("./downloads/" + filename, pdfBuffer);
                   });
                   console.log(`Downloaded file: ${filename}`);
-
-                  await browser.close();
+                  //CLOSE PAGE AFTER DOWNLOAD
+                  await page.close();
                 }
               }
             });
