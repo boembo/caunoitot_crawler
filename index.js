@@ -2,6 +2,7 @@ const puppeteer = require('puppeteer')
 const fs = require('fs').promises;
 const mysql = require('mysql');
 const path = require('path');
+const axios = require('axios');
 
 const connection = mysql.createConnection({
   host: 'localhost',
@@ -24,6 +25,7 @@ const headerAttributes = {
   employment_type: "Employment type",
   address: "Address",
   is_it_job: "Types",
+  team_size: "Team size",
 };
 
 
@@ -97,13 +99,21 @@ async function run(){
 
         // await page.goto(jobLink);
         // await page.waitForNavigation({ waitUntil: 'networkidle2' });
+
         
   
             await page.goto("https://app.recruitery.co/jobs/9286");
             await page.waitForNavigation({ waitUntil: 'networkidle2' });
 
+            // const jobId = jobLink.match(/jobs(\d+)/)[1];
+
+            const jobId = 9286;
             const client = await page.target().createCDPSession(); 
-            await client.send('Page.setDownloadBehavior', { behavior: 'allow', downloadPath: path.resolve('./downloads'),  });
+            await client.send('Page.setDownloadBehavior',
+             {
+              behavior: 'allow', 
+              downloadPath: path.resolve('./defaultDownload'),  
+            });
     
             //GET JOB HEADER ATTRIBUTES
             for (const [key, headerAttribute] of Object.entries(headerAttributes)) {
@@ -120,6 +130,10 @@ async function run(){
                   console.log(`Div containing '${headerAttribute}' not found!`);
                 }
             }
+
+            const jobMemoElement = await page.$('div.ant-alert-message div[class*=job-detail_job-detail__notice]');
+            const jobMemo = await page.evaluate(element => element.textContent, jobMemoElement);
+            console.log("job memo  " + jobMemo);
             //END JOB HEADER ATTRIBUTES
 
             //GET JOB BENEFIT ATTRIBUTES
@@ -153,6 +167,46 @@ async function run(){
             });
             //END JOB CONTENT
 
+
+            //GET COMPANY DETAIL
+            const companyNameElement = await page.$('div.ant-col-18 h3[class*=job-description_job-description__headin]:first-child');  
+            const companyName = await page.evaluate(element => element.textContent, companyNameElement);
+            console.log("company name" + companyName);
+
+            const companyDescriptionElement = await page.$('div.ant-row div.ant-col-24 p:first-child');  
+            const companyDescription = await page.evaluate(element => element.textContent, companyDescriptionElement);
+            console.log("company desc" + companyDescription);
+            //SAVE LOGO
+            const companyLogoUrl = await page.$eval('div.ant-row div.ant-col-6 img', img => img.src);
+            // Use axios to download the image as a buffer
+            if(companyLogoUrl) {
+              const imageBuffer = await axios({
+                method: 'get',
+                url: companyLogoUrl,
+                responseType: 'arraybuffer'
+              });
+
+              // Write the buffer to a file using Node's fs module
+              require('fs').writeFileSync(`img/company_logo/recruitery/${jobId}.jpg`, imageBuffer.data);
+            }
+
+            const companyDetailSelector = 'div[class*="job-description_title"]';
+            const companyDetailElements = await page.$$eval(`${companyDetailSelector}`, titles => {
+              const companyContents = {};
+
+              titles.forEach(title => {
+                const titleText = title.textContent.trim();
+                const nextSibling = title.nextElementSibling;
+                const nextSiblingText = nextSibling ? nextSibling.textContent.trim() : '';
+                companyContents[titleText] = nextSiblingText;
+              });
+              return companyContents;
+            });
+            //END JOB CONTENT
+            console.log(companyDetailElements);
+
+
+
             //LISTEN FILE DOWNLOAD
             page.on('response', async response => {
               //check for "Content-Disposition"
@@ -163,11 +217,11 @@ async function run(){
                 var matches = filenameRegex.exec(disposition);
                 if (matches != null && matches[1]) { 
                   
-                  const filename = 'example.pdf';
+                  const filename = `recruitery_${jobId}.pdf`;
                   await response.buffer().then(buffer => {
                     // console.log(buffer.toString());
                     const pdfBuffer = Buffer.from(buffer, 'base64');
-                    require('fs').writeFileSync("./downloads/" + filename, pdfBuffer);
+                    require('fs').writeFileSync("./jd/recruitery/" + filename, pdfBuffer);
                   });
                   console.log(`Downloaded file: ${filename}`);
                   //CLOSE PAGE AFTER DOWNLOAD
@@ -177,6 +231,8 @@ async function run(){
             });
             //CLICK DOWNLOAD FILE 
             await page.click('.ant-card-extra .ant-space-item:first-child'); // some button that triggers file selection
+            // const downloadBtn = await page.waitForSelector('div:contains("Download JD")');
+            // await downloadBtn.click();
           
     // }
 
