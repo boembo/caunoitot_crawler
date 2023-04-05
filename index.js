@@ -99,15 +99,15 @@ async function run(){
 
         // await page.goto(jobLink);
         // await page.waitForNavigation({ waitUntil: 'networkidle2' });
+            // const jobId = jobLink.match(/jobs(\d+)/)[1];
 
         
   
             await page.goto("https://app.recruitery.co/jobs/9286");
             await page.waitForNavigation({ waitUntil: 'networkidle2' });
-
-            // const jobId = jobLink.match(/jobs(\d+)/)[1];
-
             const jobId = 9286;
+
+
             const client = await page.target().createCDPSession(); 
             await client.send('Page.setDownloadBehavior',
              {
