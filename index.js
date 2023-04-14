@@ -5,6 +5,8 @@ const path = require('path');
 const axios = require('axios');
 const { Worker } = require('worker_threads');
 
+const { collectJobDetails } = require('./collectJobDetails.js');
+
 const mySqlConnection = mysql.createConnection({
   host: 'localhost',
   user: 'root',
@@ -62,13 +64,10 @@ async function run(){
 
     //test with limited page 
     // const maxPage = 1;
-  
-
-
         // Get the job links from all pages and split them into chunks for parallel processing
       const allJobLinks = [];
       //REAL CODE
-      for (let i = startPage; i <= 1; i++) {
+      for (let i = startPage; i <= 3; i++) {
         //uncomment for Production
         const pageUrl = recruiteryURL + i;
         await page.goto(`${pageUrl}`);
@@ -88,38 +87,32 @@ async function run(){
           allJobLinks.push(...jobLinks);
       }
 
-  const chunkSize = Math.ceil(allJobLinks.length / NUM_THREADS);
-  const jobChunks = [];
-  for (let i = 0; i < allJobLinks.length; i += chunkSize) {
-    jobChunks.push(allJobLinks.slice(i, i + chunkSize));
-  }
+      const pageQueue = [];
 
-  const jobDataPromises = [];
-  for (let i = 0; i < NUM_THREADS; i++) {
-    if(i == 0) {
-      jobDataPromises.push(
-        new Promise((resolve, reject) => {
-          const worker = new Worker('./worker.js', {
-            workerData: {
-              jobLinks: jobChunks[i],
-            },
-          });
-          worker.on('message', resolve);
-          worker.on('error', reject);
-          worker.on('exit', (code) => {
-            if (code !== 0) {
-              reject(new Error(`Worker stopped with exit code ${code}`));
-            }
-          });
-        })
-      );
+  for (const jobUrl of allJobLinks) {
+    const pagePromise = (async () => {
+      const page = await browser.newPage();
+      try {
+        await collectJobDetails(page, jobUrl);
+        // Collect job details here
+        console.log(await page.title());
+      } catch (err) {
+        console.error(err);
+      } finally {
+        await page.close();
+      }
+    })();
+    pageQueue.push(pagePromise);
+    if (pageQueue.length >= 10) {
+      await Promise.all(pageQueue);
+      pageQueue.length = 0;
     }
-    
   }
 
-  const jobData = await Promise.all(jobDataPromises);
+  // Process any remaining jobs in the queue
+  await Promise.all(pageQueue);
+
   await browser.close();
-  console.log(`Done Crawl ${jobData[0].length} Job in ${maxPage} pages`);
 }
 
 run();
