@@ -85,10 +85,7 @@ async function run(){
             return filteredAnchors;
           }, 'Refer and earn');
 
-          console.log(jobLinks);
-
           allJobLinks.push(...jobLinks);
-          console.log(allJobLinks);
       }
 
   const chunkSize = Math.ceil(allJobLinks.length / NUM_THREADS);
@@ -96,9 +93,6 @@ async function run(){
   for (let i = 0; i < allJobLinks.length; i += chunkSize) {
     jobChunks.push(allJobLinks.slice(i, i + chunkSize));
   }
-
-
-  console.log(jobChunks);
 
   const jobDataPromises = [];
   for (let i = 0; i < NUM_THREADS; i++) {
@@ -123,9 +117,9 @@ async function run(){
     
   }
 
-  // const jobData = await Promise.all(jobDataPromises);
+  const jobData = await Promise.all(jobDataPromises);
   await browser.close();
-  // console.log(jobData.flat());
+  console.log(`Done Crawl ${jobData[0].length} Job in ${maxPage} pages`);
 }
 
 run();
