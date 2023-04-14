@@ -14,21 +14,38 @@ const mySqlConnection = mysql.createConnection({
   database: 'caunoitot_job',
 });
 
-const NUM_THREADS = 4;
-
-
+const MAX_CONCURRENCY = 10;
+const MAX_BROWSERS = 4;
 
 async function run(){
-    // First, we must launch a browser instance
-    const browser = await puppeteer.launch({
-        headless: false,
-        ignoreHTTPSErrors: true,
-        //executablePath: 'C:/Program Files/Google/Chrome/Application/chrome.exe',
-       // args: ["--lang=en-US,en", '--no-sandbox', '--disable-setuid-sandbox', '--disable-extensions']
-        // userDataDir:"C:\\Users\\rin rin\\AppData\\Local\\Chromium\\User Data"
-        defaultViewport: null,
-        // downloadsPath: './downloads',
-    })
+    // // First, we must launch a browser instance
+    // const browser = await puppeteer.launch({
+    //   headless: false,
+    //   ignoreHTTPSErrors: true,
+    //   //executablePath: 'C:/Program Files/Google/Chrome/Application/chrome.exe',
+    //  // args: ["--lang=en-US,en", '--no-sandbox', '--disable-setuid-sandbox', '--disable-extensions']
+    //   // userDataDir:"C:\\Users\\rin rin\\AppData\\Local\\Chromium\\User Data"
+    //   defaultViewport: null,
+    //   // downloadsPath: './downloads',
+    // })
+
+    const browserPool = await Promise.all(
+      Array.from({ length: MAX_BROWSERS }).map(() => puppeteer.launch(
+        {
+          headless: false,
+          ignoreHTTPSErrors: true,
+          //executablePath: 'C:/Program Files/Google/Chrome/Application/chrome.exe',
+         // args: ["--lang=en-US,en", '--no-sandbox', '--disable-setuid-sandbox', '--disable-extensions']
+          // userDataDir:"C:\\Users\\rin rin\\AppData\\Local\\Chromium\\User Data"
+          defaultViewport: null,
+          // downloadsPath: './downloads',
+        }))
+    );
+
+    const pageQueues = Array.from({ length: MAX_BROWSERS }).map(() => []);
+
+    let currentBrowserIndex = 0;
+    const browser = browserPool[currentBrowserIndex];
 
     const page = await browser.newPage();
     const cookiesString = await fs.readFile('./cookie.json');
@@ -87,32 +104,55 @@ async function run(){
           allJobLinks.push(...jobLinks);
       }
 
-      const pageQueue = [];
+      for (const jobUrl of allJobLinks) {
+        const pagePromise = (async () => {
+          const browser = browserPool[currentBrowserIndex];
+          const pageQueue = pageQueues[currentBrowserIndex];
+    
+          const page = await browser.newPage();
+          const cookiesString = await fs.readFile('./cookie.json');
+          const cookies = JSON.parse(cookiesString);
 
-  for (const jobUrl of allJobLinks) {
-    const pagePromise = (async () => {
-      const page = await browser.newPage();
-      try {
-        await collectJobDetails(page, jobUrl);
-        // Collect job details here
-        console.log(await page.title());
-      } catch (err) {
-        console.error(err);
-      } finally {
-        await page.close();
+          const localStorages = await fs.readFile('./localstorage.txt');
+          const lStorage = JSON.parse(localStorages);
+          
+          await page.evaluateOnNewDocument((data) => {
+              for (const [key, value] of Object.entries(data)) {
+                  localStorage.setItem(key, value);
+              }
+            }, lStorage);
+            
+          await page.setCookie(...cookies.cookies);
+    
+          try {
+            // Collect job details here
+            const jobDetails = await collectJobDetails(page, jobUrl);
+            console.log(jobDetails);
+          } catch (err) {
+            console.error(err);
+          } finally {
+            await page.close();
+            const index = pageQueue.indexOf(pagePromise);
+            if (index >= 0) {
+              pageQueue.splice(index, 1);
+            }
+          }
+        })();
+        pageQueues[currentBrowserIndex].push(pagePromise);
+        currentBrowserIndex = (currentBrowserIndex + 1) % MAX_BROWSERS;
+        const pageQueue = pageQueues[currentBrowserIndex];
+        if (pageQueue.length >= MAX_CONCURRENCY) {
+          await Promise.all(pageQueue);
+          pageQueue.length = 0;
+        }
       }
-    })();
-    pageQueue.push(pagePromise);
-    if (pageQueue.length >= 10) {
-      await Promise.all(pageQueue);
-      pageQueue.length = 0;
-    }
-  }
-
-  // Process any remaining jobs in the queue
-  await Promise.all(pageQueue);
-
-  await browser.close();
+    
+      // Process any remaining pages in the queues
+      for (const pageQueue of pageQueues) {
+        await Promise.all(pageQueue);
+      }
+    
+      await Promise.all(browserPool.map(browser => browser.close()));
 }
 
 run();
