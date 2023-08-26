@@ -62,6 +62,17 @@ async function run(){
     //test with limited page 
     const maxPage = 1;
 
+    
+    //Pagination UL
+    //real code
+    // const maxPage = await page.evaluate(() => {
+    //     const ul = document.querySelector('ul.ant-pagination'); // select the UL element with class name 'ant-pagination'
+    //     const li = ul.children[ul.children.length - 3]; // select the 2nd last LI child
+    //     const a = li.querySelector('a'); // select the anchor element inside the LI
+    //     return a.textContent.trim();
+    //   });
+
+    
         // Get the job links from all pages and split them into chunks for parallel processing
       const allJobLinks = [];
       //REAL CODE
