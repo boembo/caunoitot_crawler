@@ -90,7 +90,7 @@ async function collectJobDetails(page, jobLink) {
 
     try {
             //Uncomment FOR Production
-            await page.setDefaultNavigationTimeout(300000);
+            await page.setDefaultNavigationTimeout(3000000);
             await page.goto(jobLink);
 
             try {
@@ -126,6 +126,37 @@ async function collectJobDetails(page, jobLink) {
                           source_site: "Recruitery",
                           source_id: jobId,
                       };
+
+                      // Take a screenshot
+                        // const screenshotBuffer = await page.screenshot();
+                        
+                        // Save the screenshot to disk
+                        // await fs.writeFile('screenshot' + jobId + '.png', screenshotBuffer);
+                        
+                        // console.log('Screenshot saved to disk.');
+
+                        const screenshotBuffer = await page.screenshot();
+
+                        // Get the directory path of the current script
+                        const scriptDirectory = __dirname;
+                    
+                        // Define the folder name where you want to save the file
+                        const folderName = 'screenshots';
+                    
+                        // Create the full path for the folder
+                        const folderPath = path.join(scriptDirectory, folderName);
+                    
+                        // Create the folder if it doesn't exist
+                        await fs.mkdir(folderPath, { recursive: true });
+                    
+                        // Define the file path within the folder
+                        const filePath = path.join(folderPath,'screenshot' + jobId + '.png');
+                    
+                        // Save the screenshot to the specified file path
+                        await fs.writeFile(filePath, screenshotBuffer);
+                    
+                        console.log('Screenshot saved to:', filePath);
+
                       writeLog(jobLink, " extract jobTitle");
                       const jobTitle = await page.$eval(
                           '[class*="job-detail-header_job-detail-header__job-name"]',
@@ -301,9 +332,9 @@ async function collectJobDetails(page, jobLink) {
               
                           writeLog(jobLink, "start Click download");
                           //CLICK DOWNLOAD FILE 
-                          await page.click('.ant-card-extra .ant-space-item:first-child'); // some button that triggers file selection
-                          // const downloadBtn = await page.waitForSelector('div:contains("Download JD")');
-                          // await downloadBtn.click();
+                          // await page.click('.ant-card-extra .ant-space-item:first-child'); // some button that triggers file selection
+                          const downloadBtn = await page.waitForXPath('//div[contains(text(), "Download JD")]', { timeout: 10000 }); // Waits for 10 seconds
+                          await downloadBtn.click();
                           await downloadFile(page, jobId);
 
                       

@@ -11,23 +11,13 @@ const mySqlConnection = mysql.createConnection({
   host: 'localhost',
   user: 'root',
   password: '',
-  database: 'caunoitot_job',
+  database: 'caunoitot',
 });
 
 const MAX_CONCURRENCY = 10;
 const MAX_BROWSERS = 4;
 
 async function run(){
-    // // First, we must launch a browser instance
-    // const browser = await puppeteer.launch({
-    //   headless: false,
-    //   ignoreHTTPSErrors: true,
-    //   //executablePath: 'C:/Program Files/Google/Chrome/Application/chrome.exe',
-    //  // args: ["--lang=en-US,en", '--no-sandbox', '--disable-setuid-sandbox', '--disable-extensions']
-    //   // userDataDir:"C:\\Users\\rin rin\\AppData\\Local\\Chromium\\User Data"
-    //   defaultViewport: null,
-    //   // downloadsPath: './downloads',
-    // })
 
     const browserPool = await Promise.all(
       Array.from({ length: MAX_BROWSERS }).map(() => puppeteer.launch(
@@ -64,20 +54,10 @@ async function run(){
     //selected Ha noi, HCM, Japan, Danang
     //Just Select Headhunting
     const startPage = 1;
-    const recruiteryURL = "https://app.recruitery.co/jobs?location=1%2C1019%2C2%2C1006%2C3&&advance=30%2C40%2C10&status=5&page=";
-    await page.goto('https://app.recruitery.co/jobs?page=1&location=1%2C1019%2C2%2C1006%2C3&advance=30%2C40%2C10&status=5', {
+    const recruiteryURL = "https://app.recruitery.co/jobs?advance=30%2C40%2C10&status=5&page=";
+    await page.goto('https://app.recruitery.co/vi/jobs?page=1&advance=10%2C30%2C40', {
         waitUntil: 'networkidle0',
     });
-
-
-    //Pagination UL
-    //real code
-    // const maxPage = await page.evaluate(() => {
-    //     const ul = document.querySelector('ul.ant-pagination'); // select the UL element with class name 'ant-pagination'
-    //     const li = ul.children[ul.children.length - 3]; // select the 2nd last LI child
-    //     const a = li.querySelector('a'); // select the anchor element inside the LI
-    //     return a.textContent.trim();
-    //   });
 
     //test with limited page 
     const maxPage = 1;
