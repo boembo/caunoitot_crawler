@@ -4,6 +4,7 @@ const mysql = require('mysql');
 const path = require('path');
 const axios = require('axios');
 const { Worker, workerData, parentPort } = require('worker_threads');
+const FormData = require('form-data');
 
 const mySqlConnection = mysql.createConnection({
     host: 'localhost',
@@ -84,17 +85,63 @@ const ignoreList = {
   
 // Write the log message to the file
 
+async function sendCrawledDataAndPDF(jobData, jobId) {
+  try {
+
+    console.log("SEND API FOR " + jobId);
+
+
+
+    const form = new FormData();
+    
+    // Append JSON data as fields
+    form.append('jobData', JSON.stringify(jobData));
+    
+    form.append('jobId', jobId);
+
+    // Get the directory path of the current script
+    const scriptDirectory = __dirname;
+    // Read and base64-encode the PDF file
+    // const pdfData = await fs.readFile(pdfFilePath, { encoding: 'base64' });
+    // form.append('pdfBase64', pdfData);
+
+    // Append the PDF file
+    const pdfStream = await fs.readFile(scriptDirectory + '/jd/recruitery/recruitery_' + jobId + '.pdf', { encoding: 'base64' });
+    form.append('pdfBase64', pdfStream);
+    
+    const companyLogo = await fs.readFile(scriptDirectory + '/img/company_logo/recruitery/' + jobId + '.jpg', { encoding: 'base64' });
+    form.append('companyLogoBase64', companyLogo);
+
+    // Send the form data to the API
+    const response = await axios.post('http://localhost:3000/api/saveCrawlData/recruitery', form, {
+      headers: {
+        ...form.getHeaders(),
+      },
+    });
+
+
+
+    console.log('Crawled data and PDF sent to the API.');
+
+
+    return response;
+
+  } catch (error) {
+    console.error('Error sending data and PDF:', error);
+  }
+}
+
 async function collectJobDetails(page, jobLink) {
    
    
 
     try {
             //Uncomment FOR Production
-            await page.setDefaultNavigationTimeout(3000000);
+            await page.setDefaultNavigationTimeout(300000);
             await page.goto(jobLink);
 
             try {
-                await page.waitForNavigation({ timeout: 5000, waitUntil: 'networkidle2' });
+                await page.waitForNavigation({ timeout: 50000, waitUntil: 'networkidle2' });
                 
 
             } catch (err) {
@@ -333,7 +380,7 @@ async function collectJobDetails(page, jobLink) {
                           writeLog(jobLink, "start Click download");
                           //CLICK DOWNLOAD FILE 
                           // await page.click('.ant-card-extra .ant-space-item:first-child'); // some button that triggers file selection
-                          const downloadBtn = await page.waitForXPath('//div[contains(text(), "Download JD")]', { timeout: 10000 }); // Waits for 10 seconds
+                          const downloadBtn = await page.waitForXPath('//div[contains(text(), "Download JD")]', { timeout: 20000 }); // Waits for 10 seconds
                           await downloadBtn.click();
                           await downloadFile(page, jobId);
 
@@ -343,19 +390,40 @@ async function collectJobDetails(page, jobLink) {
                           var time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
                           var dateTime = date+' '+time;
 
-                          jobData.updated_at = dateTime;
+
+
+
+                          //test
+                          // jobData.updated_at = dateTime;
+
+
+
+
+
+
                             // Then you can use it with async/await like this:
                             
                             await new Promise((resolve, reject) => {
-                              mySqlConnection.query(
-                                'INSERT INTO job SET ? ON DUPLICATE KEY UPDATE ?', 
-                                [jobData, jobData], 
-                                function (err, result) {
-                                  if (err) reject(err);
-                                  writeLog(jobLink, "1 record inserted or updated, ID: " + result.insertId);
-                                  resolve(result);
-                                }
-                              );
+
+                              // const response = await axios.post('http://localhost:3000/api/saveCrawlData/recruitery', jobData);
+
+                              sendCrawledDataAndPDF(jobData, jobId);
+
+                              writeLog(jobLink, "SEND API ");
+
+                              resolve(1);
+                              // mySqlConnection.query(
+                              //   'INSERT INTO job SET ? ON DUPLICATE KEY UPDATE ?', 
+                              //   [jobData, jobData], 
+                              //   function (err, result) {
+                              //     if (err) reject(err);
+                              //     writeLog(jobLink, "1 record inserted or updated, ID: " + result.insertId);
+                              //     resolve(result);
+                              //   }
+                              // );
+
+
+
                             });
               
                           writeLog(jobLink, "INSERTED ");
