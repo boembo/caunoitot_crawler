@@ -259,10 +259,10 @@ async function collectJobDetails(page, jobLink) {
                           const companyName = await page.evaluate(element => element.textContent, companyNameElement);
                           writeLog(jobLink, "company name" + companyName);
               
-                          const companyDescriptionElement = await page.$('div.ant-row div.ant-col-24 p:first-child');  
-                          const companyDescription = await page.evaluate(element => element.textContent, companyDescriptionElement);
+                          const companyDescriptionElement = await page.$('div.ant-row div.ant-col-24 div:first-child');  
+                          const companyDescription = await page.evaluate(element => element.innerHTML, companyDescriptionElement);
                           writeLog(jobLink, "company desc" + companyDescription);
-                          
+
                           //SAVE LOGO
                           const companyLogoUrl = await page.$eval('div.ant-row div.ant-col-6 img', img => img.src);
                           // Use axios to download the image as a buffer
