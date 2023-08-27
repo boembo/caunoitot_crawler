@@ -55,7 +55,7 @@ async function run(){
     //Just Select Headhunting
     const startPage = 1;
     const recruiteryURL = "https://app.recruitery.co/jobs?advance=30%2C40%2C10&status=5&page=";
-    await page.goto('https://app.recruitery.co/vi/jobs?page=1&advance=10%2C30%2C40', {
+    await page.goto('https://app.recruitery.co/vi/jobs?page=1&advance=10%2C30%2C40&status=5', {
         waitUntil: 'networkidle2',
     });
 
@@ -82,6 +82,32 @@ async function run(){
         await page.goto(`${pageUrl}`);
         await page.waitForNavigation({ waitUntil: 'networkidle2' });
 
+
+        await new Promise(resolve => setTimeout(resolve, 2000));
+
+        const screenshotBuffer = await page.screenshot();
+
+        // Get the directory path of the current script
+        const scriptDirectory = __dirname;
+    
+        // Define the folder name where you want to save the file
+        const folderName = 'screenshots';
+    
+        // Create the full path for the folder
+        const folderPath = path.join(scriptDirectory, folderName);
+    
+        // Create the folder if it doesn't exist
+        await fs.mkdir(folderPath, { recursive: true });
+    
+        // Define the file path within the folder
+        const filePath = path.join(folderPath,'page_' + i + '.png');
+    
+        // Save the screenshot to the specified file path
+        await fs.writeFile(filePath, screenshotBuffer);
+    
+        console.log('Screenshot saved to:', filePath);
+
+
         console.log(`go to page ${i}`);
 
          const jobLinks = await page.$$eval('.ant-row div a[class*=jobs-hunter-item_jobs-hunter-item]', (anchors, searchText) => {
@@ -104,10 +130,17 @@ async function run(){
 
   
           allJobLinks.push(...jobLinks);
+          //Wait 2 second before go next page
+          await new Promise(resolve => setTimeout(resolve, 5000)); 
+
       }
 
       console.log('all jobs found');
       console.log(allJobLinks.length);
+
+
+      
+      // return;
 
       //Must reverse the array because the newest job will must be insert later on DB 
       for (const jobUrl of allJobLinks.reverse()) {

@@ -88,10 +88,6 @@ const ignoreList = {
 async function sendCrawledDataAndPDF(jobData, jobId) {
   try {
 
-    console.log("SEND API FOR " + jobId);
-
-
-
     const form = new FormData();
     
     // Append JSON data as fields
@@ -101,9 +97,6 @@ async function sendCrawledDataAndPDF(jobData, jobId) {
 
     // Get the directory path of the current script
     const scriptDirectory = __dirname;
-    // Read and base64-encode the PDF file
-    // const pdfData = await fs.readFile(pdfFilePath, { encoding: 'base64' });
-    // form.append('pdfBase64', pdfData);
 
     // Append the PDF file
     const pdfStream = await fs.readFile(scriptDirectory + '/jd/recruitery/recruitery_' + jobId + '.pdf', { encoding: 'base64' });
@@ -113,16 +106,23 @@ async function sendCrawledDataAndPDF(jobData, jobId) {
     form.append('companyLogoBase64', companyLogo);
 
     // Send the form data to the API
-    const response = await axios.post('http://localhost:3000/api/saveCrawlData/recruitery', form, {
+    const response = await axios.post('https://viecthom.com/api/saveCrawlData/recruitery', form, {
       headers: {
         ...form.getHeaders(),
       },
     });
 
+    // const response = await axios.post('http://localhost:3000/api/saveCrawlData/recruitery', form, {
+    //   headers: {
+    //     ...form.getHeaders(),
+    //   },
+    // });
 
 
     console.log('Crawled data and PDF sent to the API.');
 
+    // Introduce a 2-second delay before returning
+    await new Promise(resolve => setTimeout(resolve, 2000));
 
     return response;
 
@@ -170,7 +170,7 @@ async function collectJobDetails(page, jobLink) {
 
                       //Initiate data for each Source
                       var jobData = {
-                          source_site: "Recruitery",
+                          source_site: "recruitery",
                           source_id: jobId,
                       };
 
@@ -181,6 +181,8 @@ async function collectJobDetails(page, jobLink) {
                         // await fs.writeFile('screenshot' + jobId + '.png', screenshotBuffer);
                         
                         // console.log('Screenshot saved to disk.');
+
+                        await new Promise(resolve => setTimeout(resolve, 2000));
 
                         const screenshotBuffer = await page.screenshot();
 
@@ -214,6 +216,7 @@ async function collectJobDetails(page, jobLink) {
 
                           writeLog(jobLink, "TITLE ");
                           jobData.title = jobTitle;
+
 
 
                           const jobRewardSelector = 'span[class*="job-detail-header_job-detail-header__reward-number"]';
@@ -253,9 +256,9 @@ async function collectJobDetails(page, jobLink) {
                           
                           const jobMemoElement = await page.$('div.ant-alert-message div[class*=job-detail_job-detail__notice]');
                           if(jobMemoElement.length > 0) {
-                          const jobMemo = await page.evaluate(element => element.textContent, jobMemoElement);
-                          writeLog(jobLink, "job memo  " + jobMemo);
-                          jobData.memo = jobMemo;
+                            const jobMemo = await page.evaluate(element => element.textContent, jobMemoElement);
+                            writeLog(jobLink, "job memo  " + jobMemo);
+                            jobData.memo = jobMemo;
                           };
                           //END JOB HEADER ATTRIBUTES
               
@@ -302,13 +305,21 @@ async function collectJobDetails(page, jobLink) {
               
               
                           //GET COMPANY DETAIL
-                          const companyNameElement = await page.$('div.ant-col-18 h3[class*=job-description_job-description__headin]:first-child');  
-                          const companyName = await page.evaluate(element => element.textContent, companyNameElement);
-                          writeLog(jobLink, "company name" + companyName);
+                          let companyName = '';
+                          const companyNameElement = await page.$('div.ant-col-18 h3[class*=job-description_job-description__headin]:first-child');
+                          if(companyNameElement) {
+                            companyName = await page.evaluate(element => element.textContent, companyNameElement);
+
+                          }
+                          writeLog(jobLink, "company name " + companyName);
               
-                          const companyDescriptionElement = await page.$('div.ant-row div.ant-col-24 div:first-child');  
-                          const companyDescription = await page.evaluate(element => element.innerHTML, companyDescriptionElement);
-                          writeLog(jobLink, "company desc" + companyDescription);
+                          let companyDescription = '';
+                          const companyDescriptionElement = await page.$('div.ant-card-body div.ant-row div.ant-col-24 div:first-child'); 
+                          if(companyDescriptionElement) {
+                            companyDescription = await page.evaluate(element => element.innerHTML, companyDescriptionElement);
+                          }
+                         
+                          writeLog(jobLink, "company desc " + companyDescription);
 
                           //SAVE LOGO
                           const companyLogoUrl = await page.$eval('div.ant-row div.ant-col-6 img', img => img.src);
@@ -380,6 +391,7 @@ async function collectJobDetails(page, jobLink) {
                           writeLog(jobLink, "start Click download");
                           //CLICK DOWNLOAD FILE 
                           // await page.click('.ant-card-extra .ant-space-item:first-child'); // some button that triggers file selection
+
                           const downloadBtn = await page.waitForXPath('//div[contains(text(), "Download JD")]', { timeout: 20000 }); // Waits for 10 seconds
                           await downloadBtn.click();
                           await downloadFile(page, jobId);
@@ -421,15 +433,9 @@ async function collectJobDetails(page, jobLink) {
                               //     resolve(result);
                               //   }
                               // );
-
-
-
                             });
               
                           writeLog(jobLink, "INSERTED ");
-
-                          
-
                   } else {
                       writeLog(jobLink, "joblink not matched");
 
@@ -438,16 +444,14 @@ async function collectJobDetails(page, jobLink) {
                 writeLog(jobLink, err.message);
             } finally {
                 writeLog(jobLink, " page closed ");
-
                 writeLog(jobLink, `Done for ${jobLink}`);
-
                 writeLog(jobLink, "wait browser close ");
                 if(jobData) {
-                    return jobData;
+                    // return jobData;
+                    return "ok";
                 } else {
                     return  '';
                 }
-            
             }
 
     return jobData;
