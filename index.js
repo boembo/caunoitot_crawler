@@ -56,23 +56,23 @@ async function run(){
     const startPage = 1;
     const recruiteryURL = "https://app.recruitery.co/jobs?advance=30%2C40%2C10&status=5&page=";
     await page.goto('https://app.recruitery.co/vi/jobs?page=1&advance=10%2C30%2C40', {
-        waitUntil: 'networkidle0',
+        waitUntil: 'networkidle2',
     });
 
     //test with limited page 
-    const maxPage = 1;
+    // const maxPage = 9;
 
     
     //Pagination UL
     //real code
-    // const maxPage = await page.evaluate(() => {
-    //     const ul = document.querySelector('ul.ant-pagination'); // select the UL element with class name 'ant-pagination'
-    //     const li = ul.children[ul.children.length - 3]; // select the 2nd last LI child
-    //     const a = li.querySelector('a'); // select the anchor element inside the LI
-    //     return a.textContent.trim();
-    //   });
+    const maxPage = await page.evaluate(() => {
+        const ul = document.querySelector('ul.ant-pagination'); // select the UL element with class name 'ant-pagination'
+        const li = ul.children[ul.children.length - 3]; // select the 2nd last LI child
+        const a = li.querySelector('a'); // select the anchor element inside the LI
+        return a.textContent.trim();
+      });
 
-    
+
         // Get the job links from all pages and split them into chunks for parallel processing
       const allJobLinks = [];
       //REAL CODE
@@ -84,19 +84,33 @@ async function run(){
 
         console.log(`go to page ${i}`);
 
-        const jobLinks = await page.$$eval('.ant-row div a[class*=jobs-hunter-item_jobs-hunter-item]', (anchors, searchText) => {
+         const jobLinks = await page.$$eval('.ant-row div a[class*=jobs-hunter-item_jobs-hunter-item]', (anchors, searchText) => {
             const filteredAnchors = [];
             for (let i = 0; i < anchors.length; i++) {
               const anchor = anchors[i];
-              filteredAnchors.push(anchor.href);
+
+              //in case wanna select all uncomment this
+              const premiumDiv = anchor.querySelector('div[class*=jobs-hunter-item_jobs-hunter-item__container--premium]');
+              if(!premiumDiv) {
+                filteredAnchors.push(anchor.href);
+
+              }
+              //End filter premium job
+
+              // filteredAnchors.push(anchor.href);
             }
             return filteredAnchors;
           }, 'Refer and earn');
 
+  
           allJobLinks.push(...jobLinks);
       }
 
-      for (const jobUrl of allJobLinks) {
+      console.log('all jobs found');
+      console.log(allJobLinks.length);
+
+      //Must reverse the array because the newest job will must be insert later on DB 
+      for (const jobUrl of allJobLinks.reverse()) {
         const pagePromise = (async () => {
           const browser = browserPool[currentBrowserIndex];
           const pageQueue = pageQueues[currentBrowserIndex];
@@ -115,6 +129,8 @@ async function run(){
             }, lStorage);
             
           await page.setCookie(...cookies.cookies);
+
+          console.log('start crawling' + jobUrl);
     
           try {
             // Collect job details here
@@ -130,6 +146,8 @@ async function run(){
             }
           }
         })();
+
+
         pageQueues[currentBrowserIndex].push(pagePromise);
         currentBrowserIndex = (currentBrowserIndex + 1) % MAX_BROWSERS;
         const pageQueue = pageQueues[currentBrowserIndex];
