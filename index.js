@@ -14,7 +14,7 @@ const mySqlConnection = mysql.createConnection({
   database: 'caunoitot',
 });
 
-const MAX_CONCURRENCY = 10;
+const MAX_CONCURRENCY = 2;
 const MAX_BROWSERS = 4;
 
 async function run(){
@@ -164,6 +164,8 @@ async function run(){
           await page.setCookie(...cookies.cookies);
 
           console.log('start crawling' + jobUrl);
+
+          await new Promise(resolve => setTimeout(resolve, 2000));
     
           try {
             // Collect job details here
@@ -173,6 +175,9 @@ async function run(){
             console.error(err);
           } finally {
             await page.close();
+
+            await new Promise(resolve => setTimeout(resolve, 2000));
+
             const index = pageQueue.indexOf(pagePromise);
             if (index >= 0) {
               pageQueue.splice(index, 1);

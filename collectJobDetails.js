@@ -206,8 +206,8 @@ async function collectJobDetails(page, jobLink) {
                     
                         console.log('Screenshot saved to:', filePath);
 
-                      writeLog(jobLink, " extract jobTitle");
-                      const jobTitle = await page.$eval(
+                          writeLog(jobLink, " extract jobTitle");
+                          const jobTitle = await page.$eval(
                           '[class*="job-detail-header_job-detail-header__job-name"]',
                           element => element.textContent.trim()
                           );                        
@@ -218,9 +218,11 @@ async function collectJobDetails(page, jobLink) {
                           jobData.title = jobTitle;
 
 
-
+                          let jobReward = '';
                           const jobRewardSelector = 'span[class*="job-detail-header_job-detail-header__reward-number"]';
-                          const jobReward = await page.$eval(`${jobRewardSelector}`, el => el.textContent);
+                          if(jobRewardSelector) {
+                            jobReward = await page.$eval(`${jobRewardSelector}`, el => el.textContent);
+                          }
                           writeLog(jobLink,jobReward);
                           jobData.reward = jobReward;
               
@@ -243,7 +245,7 @@ async function collectJobDetails(page, jobLink) {
                               const nextElement = await element[0].$x('following-sibling::div[1]');
                               if (nextElement.length > 0) {
                                   headerContent = await page.evaluate(el => el.textContent, nextElement[0]);
-                                  writeLog(jobLink, `Content of the div next to '${headerAttribute}':`, headerContent.trim());
+                                  writeLog(jobLink, `Content of the div next to '${headerAttribute}':`, headerContent);
                               } else {
                                   writeLog(jobLink, `Div next to '${headerAttribute}' not found!`);
                               }
@@ -255,11 +257,13 @@ async function collectJobDetails(page, jobLink) {
                           }
                           
                           const jobMemoElement = await page.$('div.ant-alert-message div[class*=job-detail_job-detail__notice]');
-                          if(jobMemoElement.length > 0) {
-                            const jobMemo = await page.evaluate(element => element.textContent, jobMemoElement);
-                            writeLog(jobLink, "job memo  " + jobMemo);
-                            jobData.memo = jobMemo;
-                          };
+                          if(jobMemoElement) {
+                              if(jobMemoElement.length > 0) {
+                              const jobMemo = await page.evaluate(element => element.textContent, jobMemoElement);
+                              writeLog(jobLink, "job memo  " + jobMemo);
+                              jobData.memo = jobMemo;
+                            };
+                          }
                           //END JOB HEADER ATTRIBUTES
               
                           //GET JOB BENEFIT ATTRIBUTES
@@ -309,7 +313,6 @@ async function collectJobDetails(page, jobLink) {
                           const companyNameElement = await page.$('div.ant-col-18 h3[class*=job-description_job-description__headin]:first-child');
                           if(companyNameElement) {
                             companyName = await page.evaluate(element => element.textContent, companyNameElement);
-
                           }
                           writeLog(jobLink, "company name " + companyName);
               
