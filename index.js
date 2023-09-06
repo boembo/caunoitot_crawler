@@ -25,7 +25,9 @@ async function run(){
           headless: false,
           ignoreHTTPSErrors: true,
           //executablePath: 'C:/Program Files/Google/Chrome/Application/chrome.exe',
-         // args: ["--lang=en-US,en", '--no-sandbox', '--disable-setuid-sandbox', '--disable-extensions']
+         args: ["--disable-notifications"],
+        //  args: ["--disable-notifications", "--lang=en-US,en", '--no-sandbox', '--disable-setuid-sandbox', '--disable-extensions'],
+
           // userDataDir:"C:\\Users\\rin rin\\AppData\\Local\\Chromium\\User Data"
           defaultViewport: null,
           // downloadsPath: './downloads',
@@ -55,7 +57,7 @@ async function run(){
     //Just Select Headhunting
     const startPage = 1;
     const recruiteryURL = "https://app.recruitery.co/jobs?advance=30%2C40%2C10&status=5&page=";
-    await page.goto('https://app.recruitery.co/vi/jobs?page=1&advance=10%2C30%2C40&status=5', {
+    await page.goto('https://app.recruitery.co/en/jobs?page=1&advance=10%2C30%2C40&status=5', {
         waitUntil: 'networkidle2',
     });
 
@@ -72,6 +74,8 @@ async function run(){
         return a.textContent.trim();
       });
 
+      console.log('maxpage');
+      console.log(maxPage);
 
         // Get the job links from all pages and split them into chunks for parallel processing
       const allJobLinks = [];
@@ -79,11 +83,15 @@ async function run(){
       for (let i = startPage; i <= maxPage; i++) {
         //uncomment for Production
         const pageUrl = recruiteryURL + i;
+
+        console.log('visiting page ' + pageUrl);
+      // console.log(maxPage);
+
+
         await page.goto(`${pageUrl}`);
         await page.waitForNavigation({ waitUntil: 'networkidle2' });
 
 
-        await new Promise(resolve => setTimeout(resolve, 2000));
 
         const screenshotBuffer = await page.screenshot();
 
@@ -106,6 +114,8 @@ async function run(){
         await fs.writeFile(filePath, screenshotBuffer);
     
         console.log('Screenshot saved to:', filePath);
+
+        await new Promise(resolve => setTimeout(resolve, 2000));
 
 
         console.log(`go to page ${i}`);
