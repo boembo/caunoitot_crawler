@@ -106,17 +106,17 @@ async function sendCrawledDataAndPDF(jobData, jobId) {
     form.append('companyLogoBase64', companyLogo);
 
     // Send the form data to the API
-    const response = await axios.post('https://viecthom.com/api/saveCrawlData/recruitery', form, {
-      headers: {
-        ...form.getHeaders(),
-      },
-    });
-
-    // const response = await axios.post('http://localhost:3000/api/saveCrawlData/recruitery', form, {
+    // const response = await axios.post('https://viecthom.com/api/saveCrawlData/recruitery', form, {
     //   headers: {
     //     ...form.getHeaders(),
     //   },
     // });
+
+    const response = await axios.post('http://localhost:3000/api/saveCrawlData/recruitery', form, {
+      headers: {
+        ...form.getHeaders(),
+      },
+    });
 
 
     console.log('Crawled data and PDF sent to the API.');
@@ -451,7 +451,7 @@ async function collectJobDetails(page, jobLink) {
                 writeLog(jobLink, "wait browser close ");
                 if(jobData) {
                     // return jobData;
-                    return "ok";
+                    return jobId;
                 } else {
                     return  '';
                 }

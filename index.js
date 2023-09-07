@@ -22,7 +22,7 @@ async function run(){
     const browserPool = await Promise.all(
       Array.from({ length: MAX_BROWSERS }).map(() => puppeteer.launch(
         {
-          headless: false,
+          headless: true,
           ignoreHTTPSErrors: true,
           //executablePath: 'C:/Program Files/Google/Chrome/Application/chrome.exe',
          args: ["--disable-notifications"],
@@ -38,6 +38,8 @@ async function run(){
 
     let currentBrowserIndex = 0;
     const browser = browserPool[currentBrowserIndex];
+
+    let crawledJobId;
 
     const page = await browser.newPage();
     const cookiesString = await fs.readFile('./cookie.json');
@@ -80,7 +82,7 @@ async function run(){
         // Get the job links from all pages and split them into chunks for parallel processing
       const allJobLinks = [];
       //REAL CODE
-      for (let i = startPage; i <= maxPage; i++) {
+      for (let i = startPage; i <= 1; i++) {
         //uncomment for Production
         const pageUrl = recruiteryURL + i;
 
@@ -179,8 +181,9 @@ async function run(){
     
           try {
             // Collect job details here
-            const jobDetails = await collectJobDetails(page, jobUrl);
-            console.log(jobDetails);
+            const jobId = await collectJobDetails(page, jobUrl);
+            crawledJobId.push(jobId);
+            console.log("Done" + jobId);
           } catch (err) {
             console.error(err);
           } finally {
@@ -211,6 +214,22 @@ async function run(){
       }
     
       await Promise.all(browserPool.map(browser => browser.close()));
+
+      // Send the form data to the API
+    // const response = await axios.post('https://viecthom.com/api/saveCrawlData/recruitery_completed', form, {
+    //   headers: {
+    //     ...form.getHeaders(),
+    //   },
+    // });
+    const form = new FormData();
+    form.append('crawledJobId', JSON.encode(crawledJobId));
+    const response = await axios.post('http://localhost:3000/api/saveCrawlData/recruitery_completed', form, {
+      headers: {
+        ...form.getHeaders(),
+      },
+    });
+
+    console.log("Sent COMPLETED API");
 }
 
 run();
