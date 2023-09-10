@@ -4,6 +4,7 @@ const mysql = require('mysql');
 const path = require('path');
 const axios = require('axios');
 const { Worker } = require('worker_threads');
+const FormData = require('form-data');
 
 const { collectJobDetails } = require('./collectJobDetails.js');
 
@@ -22,10 +23,10 @@ async function run(){
     const browserPool = await Promise.all(
       Array.from({ length: MAX_BROWSERS }).map(() => puppeteer.launch(
         {
-          headless: true,
+          headless: false,
           ignoreHTTPSErrors: true,
           //executablePath: 'C:/Program Files/Google/Chrome/Application/chrome.exe',
-         args: ["--disable-notifications"],
+         args: ["--disable-notifications", "--no-sandbox"],
         //  args: ["--disable-notifications", "--lang=en-US,en", '--no-sandbox', '--disable-setuid-sandbox', '--disable-extensions'],
 
           // userDataDir:"C:\\Users\\rin rin\\AppData\\Local\\Chromium\\User Data"
@@ -39,7 +40,7 @@ async function run(){
     let currentBrowserIndex = 0;
     const browser = browserPool[currentBrowserIndex];
 
-    let crawledJobId;
+    var crawledJobId = [];
 
     const page = await browser.newPage();
     const cookiesString = await fs.readFile('./cookie.json');
@@ -59,14 +60,17 @@ async function run(){
     //Just Select Headhunting
     const startPage = 1;
     const recruiteryURL = "https://app.recruitery.co/jobs?advance=30%2C40%2C10&status=5&page=";
-    await page.goto('https://app.recruitery.co/en/jobs?page=1&advance=10%2C30%2C40&status=5', {
-        waitUntil: 'networkidle2',
+    await page.goto('https://app.recruitery.co/jobs?page=1&advance=10%2C30%2C40&status=5', {
+        waitUntil: 'domcontentloaded',
+        timeout: 90000
     });
 
+    // await page.waitFor(3000);
     //test with limited page 
     // const maxPage = 9;
 
-    
+    // Wait for ul.ant-pagination to become visible
+    await page.waitForSelector('ul.ant-pagination', { visible: true });
     //Pagination UL
     //real code
     const maxPage = await page.evaluate(() => {
@@ -90,9 +94,14 @@ async function run(){
       // console.log(maxPage);
 
 
-        await page.goto(`${pageUrl}`);
-        await page.waitForNavigation({ waitUntil: 'networkidle2' });
+        await page.goto(`${pageUrl}`, {waitUntil: 'domcontentloaded', timeout: 180000 });
+        // await page.waitForNavigation({timeout: 180000 });
 
+
+        console.log('loaded');
+        // await page.waitForSelector('body', { visible: true });
+
+        // await page.waitForSelector('body', {visible: true})
 
 
         const screenshotBuffer = await page.screenshot();
@@ -100,6 +109,9 @@ async function run(){
         // Get the directory path of the current script
         const scriptDirectory = __dirname;
     
+
+        console.log('taked Screenshot ' + pageUrl);
+
         // Define the folder name where you want to save the file
         const folderName = 'screenshots';
     
@@ -117,10 +129,26 @@ async function run(){
     
         console.log('Screenshot saved to:', filePath);
 
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        await new Promise(resolve => setTimeout(resolve, 1000));
 
 
         console.log(`go to page ${i}`);
+
+        // const maxPage = await page.evaluate(() => {
+        //   const ul = document.querySelector('ul.ant-pagination'); // select the UL element with class name 'ant-pagination'
+        //   const li = ul.children[ul.children.length - 3]; // select the 2nd last LI child
+        //   const a = li.querySelector('a'); // select the anchor element inside the LI
+        //   return a.textContent.trim();
+        // });
+
+        await page.waitForSelector('ul.ant-pagination', {visible: true})
+
+        console.log('found pagination selector');
+
+
+        await new Promise(resolve => setTimeout(resolve, 2000));
+ 
+
 
          const jobLinks = await page.$$eval('.ant-row div a[class*=jobs-hunter-item_jobs-hunter-item]', (anchors, searchText) => {
             const filteredAnchors = [];
@@ -182,6 +210,10 @@ async function run(){
           try {
             // Collect job details here
             const jobId = await collectJobDetails(page, jobUrl);
+
+            console.log("kekka" + jobId);
+
+
             crawledJobId.push(jobId);
             console.log("Done" + jobId);
           } catch (err) {
@@ -213,7 +245,6 @@ async function run(){
         await Promise.all(pageQueue);
       }
     
-      await Promise.all(browserPool.map(browser => browser.close()));
 
       // Send the form data to the API
     // const response = await axios.post('https://viecthom.com/api/saveCrawlData/recruitery_completed', form, {
@@ -222,7 +253,7 @@ async function run(){
     //   },
     // });
     const form = new FormData();
-    form.append('crawledJobId', JSON.encode(crawledJobId));
+    form.append('crawledJobId', JSON.stringify(crawledJobId));
     const response = await axios.post('http://localhost:3000/api/saveCrawlData/recruitery_completed', form, {
       headers: {
         ...form.getHeaders(),
@@ -230,6 +261,9 @@ async function run(){
     });
 
     console.log("Sent COMPLETED API");
+
+    await Promise.all(browserPool.map(browser => browser.close()));
+
 }
 
 run();

@@ -133,6 +133,7 @@ async function sendCrawledDataAndPDF(jobData, jobId) {
 
 async function collectJobDetails(page, jobLink) {
    
+  var jobId = jobLink.match(/jobs\/(\d+)/)[1];            
    
 
     try {
@@ -207,7 +208,7 @@ async function collectJobDetails(page, jobLink) {
                         console.log('Screenshot saved to:', filePath);
 
                           writeLog(jobLink, " extract jobTitle");
-                          const jobTitle = await page.$eval(
+                          const jobTitle = await page.$$eval(
                           '[class*="job-detail-header_job-detail-header__job-name"]',
                           element => element.textContent.trim()
                           );                        
@@ -224,10 +225,10 @@ async function collectJobDetails(page, jobLink) {
                             jobReward = await page.$eval(`${jobRewardSelector}`, el => el.textContent);
                           }
                           writeLog(jobLink,jobReward);
-                          jobData.reward = jobReward;
+                          jobData.original_reward = jobReward;
               
                           //GET JOB TAGS
-                          const tagElements = await page.$$eval(`span.ant-tag`, tags => {
+                          const tagElements = await page.$$eval(`div[class*="edit-information-view_edit-information-view__info-skills"] span.ant-tag`, tags => {
                           return tags.map(tag => {
                               return tag.textContent.trim();
                           });
@@ -409,7 +410,7 @@ async function collectJobDetails(page, jobLink) {
 
 
                           //test
-                          // jobData.updated_at = dateTime;
+                          jobData.updated_at = dateTime;
 
 
 
@@ -450,9 +451,11 @@ async function collectJobDetails(page, jobLink) {
                 writeLog(jobLink, `Done for ${jobLink}`);
                 writeLog(jobLink, "wait browser close ");
                 if(jobData) {
+                  console.log(jobId);
                     // return jobData;
                     return jobId;
                 } else {
+                  console.log("Failted");
                     return  '';
                 }
             }
