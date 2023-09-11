@@ -5,6 +5,8 @@ const path = require('path');
 const axios = require('axios');
 const { Worker, workerData, parentPort } = require('worker_threads');
 const FormData = require('form-data');
+const moment = require('moment');
+
 
 const mySqlConnection = mysql.createConnection({
     host: 'localhost',
@@ -210,7 +212,7 @@ async function collectJobDetails(page, jobLink) {
                           writeLog(jobLink, " extract jobTitle");
                           const jobTitle = await page.$$eval(
                           '[class*="job-detail-header_job-detail-header__job-name"]',
-                          element => element.textContent.trim()
+                              element => element.textContent
                           );                        
 
                           writeLog(jobLink,jobTitle);
@@ -401,24 +403,10 @@ async function collectJobDetails(page, jobLink) {
                           await downloadFile(page, jobId);
 
                       
-                          var today = new Date();
-                          var date = today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate();
-                          var time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
-                          var dateTime = date+' '+time;
-
-
-
-
                           //test
-                          jobData.updated_at = dateTime;
-
-
-
-
-
+                          jobData.updated_at = moment().format('YYYY-MM-DD hh:mm:ss');
 
                             // Then you can use it with async/await like this:
-                            
                             await new Promise((resolve, reject) => {
 
                               // const response = await axios.post('http://localhost:3000/api/saveCrawlData/recruitery', jobData);
