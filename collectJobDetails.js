@@ -108,17 +108,17 @@ async function sendCrawledDataAndPDF(jobData, jobId) {
     form.append('companyLogoBase64', companyLogo);
 
     // Send the form data to the API
-    // const response = await axios.post('https://viecthom.com/api/saveCrawlData/recruitery', form, {
-    //   headers: {
-    //     ...form.getHeaders(),
-    //   },
-    // });
-
-    const response = await axios.post('http://localhost:3000/api/saveCrawlData/recruitery', form, {
+    const response = await axios.post('https://viecthom.com/api/saveCrawlData/recruitery', form, {
       headers: {
         ...form.getHeaders(),
       },
     });
+
+    // const response = await axios.post('http://localhost:3000/api/saveCrawlData/recruitery', form, {
+    //   headers: {
+    //     ...form.getHeaders(),
+    //   },
+    // });
 
 
     console.log('Crawled data and PDF sent to the API.');
@@ -210,7 +210,7 @@ async function collectJobDetails(page, jobLink) {
                         console.log('Screenshot saved to:', filePath);
 
                           writeLog(jobLink, " extract jobTitle");
-                          const jobTitle = await page.$$eval(
+                          const jobTitle = await page.$eval(
                           '[class*="job-detail-header_job-detail-header__job-name"]',
                               element => element.textContent
                           );                        
@@ -292,7 +292,7 @@ async function collectJobDetails(page, jobLink) {
                           //END JOB BENEFIT ATTRIBUTES
               
                           //GET JOB CONTENT 
-                          writeLog(jobLink, "GET ALL TITL 1 E");
+                          // writeLog(jobLink, "GET ALL TITL 1 E");
               
                           const jobContentSelector = 'h3[class*="edit-summary-view_edit-summary-view__heading"]';
                           const jobContentDatas = await page.$$eval(`${jobContentSelector}`, (titles, jobContentAttributes) => {
@@ -313,7 +313,7 @@ async function collectJobDetails(page, jobLink) {
               
                           //GET COMPANY DETAIL
                           let companyName = '';
-                          const companyNameElement = await page.$('div.ant-col-18 h3[class*=job-description_job-description__headin]:first-child');
+                          const companyNameElement = await page.$('div.ant-col-18 h3[class*="company-profile-view_company-profile-view__heading"]:first-child');
                           if(companyNameElement) {
                             companyName = await page.evaluate(element => element.textContent, companyNameElement);
                           }

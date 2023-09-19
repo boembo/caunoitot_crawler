@@ -86,7 +86,7 @@ async function run(){
         // Get the job links from all pages and split them into chunks for parallel processing
       const allJobLinks = [];
       //REAL CODE
-      for (let i = startPage; i <= 1; i++) {
+      for (let i = startPage; i <= maxPage; i++) {
         //uncomment for Production
         const pageUrl = recruiteryURL + i;
 
