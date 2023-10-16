@@ -101,20 +101,20 @@ async function sendCrawledDataAndPDF(jobData, jobId) {
     const scriptDirectory = __dirname;
 
     // Append the PDF file
-    const pdfStream = await fs.readFile(scriptDirectory + '/jd/recruitery/recruitery_' + jobId + '.pdf', { encoding: 'base64' });
-    form.append('pdfBase64', pdfStream);
+    // const pdfStream = await fs.readFile(scriptDirectory + '/jd/referhr/referhr_' + jobId + '.pdf', { encoding: 'base64' });
+    // form.append('pdfBase64', pdfStream);
     
-    const companyLogo = await fs.readFile(scriptDirectory + '/img/company_logo/recruitery/' + jobId + '.jpg', { encoding: 'base64' });
+    const companyLogo = await fs.readFile(scriptDirectory + '/img/company_logo/referhr/' + jobId + '.jpg', { encoding: 'base64' });
     form.append('companyLogoBase64', companyLogo);
 
     // Send the form data to the API
-    const response = await axios.post('https://viecthom.com/api/saveCrawlData/recruitery', form, {
+    const response = await axios.post('https://viecthom.com/api/saveCrawlData/referhr', form, {
       headers: {
         ...form.getHeaders(),
       },
     });
 
-    // const response = await axios.post('http://localhost:3000/api/saveCrawlData/recruitery', form, {
+    // const response = await axios.post('http://localhost:3000/api/saveCrawlData/referhr', form, {
     //   headers: {
     //     ...form.getHeaders(),
     //   },
@@ -135,7 +135,11 @@ async function sendCrawledDataAndPDF(jobData, jobId) {
 
 async function collectJobDetails(page, jobLink) {
    
-  var jobId = jobLink.match(/jobs\/(\d+)/)[1];            
+  // var jobId = jobLink.match(/id=\/(\d+)/)[1];  
+  
+  var jobId = jobLink.match(/id=(\d+)/)[1];
+  
+   console.log("jobId" + jobId);
    
 
     try {
@@ -155,25 +159,25 @@ async function collectJobDetails(page, jobLink) {
             writeLog(jobLink, "start try");
             writeLog(jobLink, `start going to ${jobLink}`);
             try {
-                  if(jobLink.match(/jobs\/(\d+)/)) {
+                  if(jobLink.match(/id=(\d+)/)) {
 
                       writeLog(jobLink, "joblink matched");
 
-                      const jobId = jobLink.match(/jobs\/(\d+)/)[1];            
+                      const jobId = jobLink.match(/id=(\d+)/)[1];         
                       //UNcomment FOR TESTING
-                      // await page.goto("https://app.recruitery.co/jobs/9286");
+                      // await page.goto("https://app.referhr.co/jobs/9286");
                       // await page.waitForNavigation({ waitUntil: 'networkidle2' });
                       // const jobId = 9286;
-                      const client = await page.target().createCDPSession(); 
-                      await client.send('Page.setDownloadBehavior',
-                      {
-                          behavior: 'allow', 
-                          downloadPath: path.resolve('./defaultDownload'),  
-                      });
+                      // const client = await page.target().createCDPSession(); 
+                      // await client.send('Page.setDownloadBehavior',
+                      // {
+                      //     behavior: 'allow', 
+                      //     downloadPath: path.resolve('./defaultDownload'),  
+                      // });
 
                       //Initiate data for each Source
                       var jobData = {
-                          source_site: "recruitery",
+                          source_site: "referhr",
                           source_id: jobId,
                       };
 
@@ -211,10 +215,11 @@ async function collectJobDetails(page, jobLink) {
 
                           writeLog(jobLink, " extract jobTitle");
                           const jobTitle = await page.$eval(
-                          '[class*="job-detail-header_job-detail-header__job-name"]',
+                          '.job-details .row .col .mb-3',
                               element => element.textContent
                           );                        
 
+                          console.log('Job title:', jobTitle);
                           writeLog(jobLink,jobTitle);
 
                           writeLog(jobLink, "TITLE ");
@@ -222,23 +227,46 @@ async function collectJobDetails(page, jobLink) {
 
 
                           let jobReward = '';
-                          const jobRewardSelector = 'span[class*="job-detail-header_job-detail-header__reward-number"]';
-                          if(jobRewardSelector) {
-                            jobReward = await page.$eval(`${jobRewardSelector}`, el => el.textContent);
-                          }
-                          writeLog(jobLink,jobReward);
+                          // const jobRewardSelector = 'span[class*="job-detail-header_job-detail-header__reward-number"]';
+                          // if(jobRewardSelector) {
+                          //   jobReward = await page.$eval(`${jobRewardSelector}`, el => el.textContent);
+                          // }
+                          // writeLog(jobLink,jobReward);
+
+                          jobReward = await page.evaluate(() => {
+                            const elements = document.querySelectorAll('.company-details .col-12.text-center p');
+                            for (let i = 0; i < elements.length; i++) {
+                              if (elements[i].textContent.includes('Referral Reward')) {
+                                const rewardText = elements[i].textContent;
+                                const rewardValue = rewardText.match(/~\s\$([\d,]+ CAD)/);
+                                if (rewardValue) {
+                                  return rewardValue[1];
+                                }
+                              }
+                            }
+                            return null; // Element not found or reward value not found
+                          });
+                        
+                          // if (referralRewardValue) {
+                          //   console.log('Referral Reward Value:', referralRewardValue);
+                          // } else {
+                          //   console.log('Element with text "Referral Reward" or its value not found.');
+                          // }
+
                           jobData.original_reward = jobReward;
+
+                          console.log("job Reward" + jobReward);
               
-                          //GET JOB TAGS
-                          const tagElements = await page.$$eval(`div[class*="edit-information-view_edit-information-view__info-skills"] span.ant-tag`, tags => {
-                          return tags.map(tag => {
-                              return tag.textContent.trim();
-                          });
-                          });
-                          writeLog(jobLink, "TAG elements");
-                          writeLog(jobLink,tagElements);
+                          // //GET JOB TAGS
+                          // const tagElements = await page.$$eval(`div[class*="edit-information-view_edit-information-view__info-skills"] span.ant-tag`, tags => {
+                          // return tags.map(tag => {
+                          //     return tag.textContent.trim();
+                          // });
+                          // });
+                          // writeLog(jobLink, "TAG elements");
+                          // writeLog(jobLink,tagElements);
               
-                          jobData.tags = JSON.stringify(tagElements);
+                          jobData.tags = "";
                   
                           //GET JOB HEADER ATTRIBUTES
                           for (const [key, headerAttribute] of Object.entries(headerAttributes)) {
@@ -338,7 +366,7 @@ async function collectJobDetails(page, jobLink) {
                           });
               
                           // Write the buffer to a file using Node's fs module
-                          require('fs').writeFileSync(`img/company_logo/recruitery/${jobId}.jpg`, imageBuffer.data);
+                          require('fs').writeFileSync(`img/company_logo/referhr/${jobId}.jpg`, imageBuffer.data);
                           }
               
                           jobData.company_name = companyName;
@@ -378,10 +406,10 @@ async function collectJobDetails(page, jobLink) {
                                     const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
                                     const matches = filenameRegex.exec(disposition);
                                     if (matches != null && matches[1]) {
-                                      const filename = `recruitery_${jobId}.pdf`;
+                                      const filename = `referhr_${jobId}.pdf`;
                                       await response.buffer().then(buffer => {
                                         const pdfBuffer = Buffer.from(buffer, 'base64');
-                                        require('fs').writeFileSync(`./jd/recruitery/${filename}`, pdfBuffer);
+                                        require('fs').writeFileSync(`./jd/referhr/${filename}`, pdfBuffer);
                                       });
                             
                                       writeLog(jobLink, `Downloaded file: ${filename}`);
@@ -409,7 +437,7 @@ async function collectJobDetails(page, jobLink) {
                             // Then you can use it with async/await like this:
                             await new Promise((resolve, reject) => {
 
-                              // const response = await axios.post('http://localhost:3000/api/saveCrawlData/recruitery', jobData);
+                              // const response = await axios.post('http://localhost:3000/api/saveCrawlData/referhr', jobData);
 
                               sendCrawledDataAndPDF(jobData, jobId);
 

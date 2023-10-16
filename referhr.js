@@ -26,7 +26,7 @@ async function run(){
           headless: false,
           ignoreHTTPSErrors: true,
           //executablePath: 'C:/Program Files/Google/Chrome/Application/chrome.exe',
-         args: ["--disable-notifications", "--no-sandbox"],
+        //  args: ["--disable-notifications", "--no-sandbox"],
         //  args: ["--disable-notifications", "--lang=en-US,en", '--no-sandbox', '--disable-setuid-sandbox', '--disable-extensions'],
 
           // userDataDir:"C:\\Users\\rin rin\\AppData\\Local\\Chromium\\User Data"
@@ -70,18 +70,27 @@ async function run(){
     // const maxPage = 9;
 
     // Wait for ul.ant-pagination to become visible
-    await page.waitForSelector('ul.ant-pagination', { visible: true });
+    await page.waitForSelector('ul.pagination', { visible: true });
     //Pagination UL
-    //real code
-    const maxPage = await page.evaluate(() => {
-        const ul = document.querySelector('ul.pagination'); // select the UL element with class name 'ant-pagination'
-        const li = ul.children[ul.children.length - 3]; // select the 2nd last LI child
-        const a = li.querySelector('a'); // select the anchor element inside the LI
-        return a.textContent.trim();
-      });
 
-      console.log('maxpage');
-      console.log(maxPage);
+
+
+
+
+    //real code
+    // const maxPage = await page.evaluate(() => {
+    //     const ul = document.querySelector('ul.pagination'); // select the UL element with class name 'ant-pagination'
+    //     const li = ul.children[ul.children.length - 3]; // select the 2nd last LI child
+    //     const a = li.querySelector('a'); // select the anchor element inside the LI
+    //     return a.textContent.trim();
+    //   });
+
+    //   console.log('maxpage');
+    //   console.log(maxPage); 
+
+
+      //MUST DELETE TEST CODE
+      const maxPage = 1;
 
         // Get the job links from all pages and split them into chunks for parallel processing
       const allJobLinks = [];
@@ -141,36 +150,24 @@ async function run(){
         //   return a.textContent.trim();
         // });
 
-        await page.waitForSelector('ul.ant-pagination', {visible: true})
+        await page.waitForSelector('ul.pagination', {visible: true})
 
         console.log('found pagination selector');
 
 
         await new Promise(resolve => setTimeout(resolve, 2000));
  
+        //  const jobLinks = await page.$$eval('.job-selector-wrapper .job a', (anchors) => {
+        //     const filteredAnchors = [];
+        //     for (let i = 0; i < anchors.length; i++) {
+        //       const anchor = anchors[i];
 
+        //       filteredAnchors.push(anchor.href);
+        //     }
+        //     return filteredAnchors;
+        //   });
 
-         const jobLinks = await page.$$eval('.job-selector-wrapper .job a', (anchors) => {
-            const filteredAnchors = [];
-            for (let i = 0; i < anchors.length; i++) {
-              const anchor = anchors[i];
-
-              filteredAnchors.push(anchor.href);
-
-
-              //in case wanna select all uncomment this
-              // const premiumDiv = anchor.querySelector('div[class*=jobs-hunter-item_jobs-hunter-item__container--premium]');
-              // if(!premiumDiv) {
-              //   filteredAnchors.push(anchor.href);
-
-              // }
-              //End filter premium job
-
-              // filteredAnchors.push(anchor.href);
-            }
-            return filteredAnchors;
-          });
-
+          const jobLinks = await page.$$eval('.job-selector-wrapper .job a', anchors => anchors.map(anchor => anchor.href));
   
           allJobLinks.push(...jobLinks);
           //Wait 2 second before go next page
@@ -180,9 +177,6 @@ async function run(){
 
       console.log('all jobs found');
       console.log(allJobLinks.length);
-
-
-      
       // return;
 
       //Must reverse the array because the newest job will must be insert later on DB 
