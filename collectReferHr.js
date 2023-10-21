@@ -57,16 +57,13 @@ const ignoreList = {
   
     // Create the log directory if it doesn't exist
       fs.mkdir(logDirectory, { recursive: true });
-  
-      if(jobLink.match(/jobs\/(\d+)/)) {
+      // jobLink.match(/id=(\d+)/)[1];
+      if(jobLink.match(/id=(\d+)/)) {
 
-          const jobId = jobLink.match(/jobs\/(\d+)/)[1]; 
-
-          // Sanitize the jobId if needed
-          const sanitizedJobId = jobId.replace(/[^\w\-]/g, '_'); // Replace non-word characters with underscores
+          const jobId = jobLink.match(/id=(\d+)/)[1]; 
         
           // Define the log file name based on the sanitized jobId and the current date
-          const logFileName = `log_${sanitizedJobId}_${date}.txt`;
+          const logFileName = `log_${jobId}_${date}.txt`;
           
           // Define the log file path
           const logFilePath = path.join(logDirectory, logFileName);
@@ -108,17 +105,17 @@ async function sendCrawledDataAndPDF(jobData, jobId) {
     form.append('companyLogoBase64', companyLogo);
 
     // Send the form data to the API
-    const response = await axios.post('https://viecthom.com/api/saveCrawlData/referhr', form, {
-      headers: {
-        ...form.getHeaders(),
-      },
-    });
-
-    // const response = await axios.post('http://localhost:3000/api/saveCrawlData/referhr', form, {
+    // const response = await axios.post('https://viecthom.com/api/saveCrawlData/referhr', form, {
     //   headers: {
     //     ...form.getHeaders(),
     //   },
     // });
+
+    const response = await axios.post('http://localhost:3000/api/saveCrawlData/referhr', form, {
+      headers: {
+        ...form.getHeaders(),
+      },
+    });
 
 
     console.log('Crawled data and PDF sent to the API.');
@@ -226,6 +223,31 @@ async function collectJobDetails(page, jobLink) {
                           jobData.title = jobTitle;
 
 
+
+                          const jobLocation = await page.$eval(
+                            '.job-location',
+                                element => element.textContent
+                            );                        
+  
+                            console.log('Job title:', jobLocation);
+                            writeLog(jobLink,jobLocation);
+  
+                            writeLog(jobLink, "jobLocation ");
+                            jobData.job_location = jobLocation;
+
+
+                            let grossSalary = '';
+                          const grossSalaryElement = await page.$('.job-details p.font-weight-bold'); 
+                          if(grossSalaryElement) {
+                            grossSalary = await page.evaluate(element => element.textContent, grossSalary);
+                          }
+                          writeLog(jobLink, "grossSalary name " + grossSalary);
+                          jobData.gross_month_salary = grossSalary;
+
+              
+
+
+
                           let jobReward = '';
                           // const jobRewardSelector = 'span[class*="job-detail-header_job-detail-header__reward-number"]';
                           // if(jobRewardSelector) {
@@ -268,87 +290,28 @@ async function collectJobDetails(page, jobLink) {
               
                           jobData.tags = "";
                   
-                          //GET JOB HEADER ATTRIBUTES
-                          for (const [key, headerAttribute] of Object.entries(headerAttributes)) {
-                              const element = await page.$x(`//div[@class='ant-descriptions-item-container']//div[contains(text(), '${headerAttribute}')]`);
-                              let headerContent = '';
-                              if (element.length > 0) {
-                              const nextElement = await element[0].$x('following-sibling::div[1]');
-                              if (nextElement.length > 0) {
-                                  headerContent = await page.evaluate(el => el.textContent, nextElement[0]);
-                                  writeLog(jobLink, `Content of the div next to '${headerAttribute}':`, headerContent);
-                              } else {
-                                  writeLog(jobLink, `Div next to '${headerAttribute}' not found!`);
-                              }
-                              } else {
-                              writeLog(jobLink, `Div containing '${headerAttribute}' not found!`);
-                              }
-              
-                              jobData[key] = headerContent.trim();
-                          }
-                          
-                          const jobMemoElement = await page.$('div.ant-alert-message div[class*=job-detail_job-detail__notice]');
-                          if(jobMemoElement) {
-                              if(jobMemoElement.length > 0) {
-                              const jobMemo = await page.evaluate(element => element.textContent, jobMemoElement);
-                              writeLog(jobLink, "job memo  " + jobMemo);
-                              jobData.memo = jobMemo;
-                            };
-                          }
+                         
                           //END JOB HEADER ATTRIBUTES
-              
-                          //GET JOB BENEFIT ATTRIBUTES
-                          // Find the div that contains the text "job-description_job-description" in its class
-                          const benefitDivSelector = 'div[class*="job-description_job-description"]';
-                          // Get all the h4 elements with class ant-list-item-meta-title inside the selected div
-                          // const benefitElements = await page.$$(`${benefitDivSelector} h4.ant-list-item-meta-title`);
-                          const benefitElements = await page.$$eval(`${benefitDivSelector} h4.ant-list-item-meta-title`, titles => {
-                          const benefitContents = {};
-              
-                          titles.forEach(title => {
-                              const titleText = title.textContent.trim();
-                              const nextSibling = title.nextElementSibling;
-                              const nextSiblingText = nextSibling ? nextSibling.textContent.trim() : '';
-                              
-                              benefitContents[titleText] = nextSiblingText;
-                          });
-                          return benefitContents;
-                          });
-                          writeLog(jobLink,benefitElements);
-              
-                          jobData.benefits = JSON.stringify(benefitElements);
-                          //END JOB BENEFIT ATTRIBUTES
-              
-                          //GET JOB CONTENT 
-                          // writeLog(jobLink, "GET ALL TITL 1 E");
-              
-                          const jobContentSelector = 'h3[class*="edit-summary-view_edit-summary-view__heading"]';
-                          const jobContentDatas = await page.$$eval(`${jobContentSelector}`, (titles, jobContentAttributes) => {
-                              const jobContents = {};
-              
-                              titles.forEach(title => {
-                              const titleText = title.textContent.trim();
-                              const nextSibling = title.nextElementSibling;
-                              const nextSiblingText = nextSibling ? nextSibling.textContent.trim() : '';
-                              jobContents[jobContentAttributes[titleText]] = nextSiblingText;
-                              });
-              
-                              return jobContents;
-                          }, jobContentAttributes);
-              
-                          jobData = Object.assign(jobData, jobContentDatas);
-              
+
+                          let fullDescription = '';
+                          const fullJobElement = await page.$('#home'); 
+                          if(fullJobElement) {
+                            fullDescription = await page.evaluate(element => element.innerHTML, fullJobElement);
+                          }
+                          jobData.job_full_description = fullDescription;
+
+                          writeLog(jobLink, "full job desc " + fullDescription);
               
                           //GET COMPANY DETAIL
                           let companyName = '';
-                          const companyNameElement = await page.$('div.ant-col-18 h3[class*="company-profile-view_company-profile-view__heading"]:first-child');
+                          const companyNameElement = await page.$('.company-details div:first-child p.font-weight-bold');
                           if(companyNameElement) {
                             companyName = await page.evaluate(element => element.textContent, companyNameElement);
                           }
                           writeLog(jobLink, "company name " + companyName);
               
                           let companyDescription = '';
-                          const companyDescriptionElement = await page.$('div.ant-card-body div.ant-row div.ant-col-24 div:first-child'); 
+                          const companyDescriptionElement = await page.$('#profile'); 
                           if(companyDescriptionElement) {
                             companyDescription = await page.evaluate(element => element.innerHTML, companyDescriptionElement);
                           }
@@ -356,7 +319,7 @@ async function collectJobDetails(page, jobLink) {
                           writeLog(jobLink, "company desc " + companyDescription);
 
                           //SAVE LOGO
-                          const companyLogoUrl = await page.$eval('div.ant-row div.ant-col-6 img', img => img.src);
+                          const companyLogoUrl = await page.$eval('.comp-icon img', img => img.src);
                           // Use axios to download the image as a buffer
                           if(companyLogoUrl) {
                           const imageBuffer = await axios({
@@ -372,65 +335,6 @@ async function collectJobDetails(page, jobLink) {
                           jobData.company_name = companyName;
                           jobData.company_description = companyDescription;
               
-                          const companyDetailSelector = 'div[class*="job-description_title"]';
-                          const companyDetailData = await page.$$eval(`${companyDetailSelector}`, (titles, companyAttributes) => {
-                          const companyContents = {};
-              
-                          titles.forEach(title => {
-                              const titleText = title.textContent.trim();
-                              const nextSibling = title.nextElementSibling;
-                              const nextSiblingText = nextSibling ? nextSibling.textContent.trim() : '';
-              
-                              companyContents[companyAttributes[titleText]] = nextSiblingText;
-                          });
-              
-                          return companyContents;
-                          }, companyAttributes);
-              
-                          writeLog(jobLink,companyDetailData);
-              
-                          jobData = Object.assign(jobData, companyDetailData);
-                          //END JOB CONTENT
-              
-              
-                          writeLog(jobLink, `start download JD`);
-                          //LISTEN FILE DOWNLOAD
-                          const downloadFile = async (page, jobId) => {
-                              // Wrap the download function inside a Promise
-                              return new Promise(async (resolve) => {
-                                // Listen for download response
-                                page.on('response', async (response) => {
-                                  const contentType = response.headers()['content-type'];
-                                  const disposition = response.headers()['content-disposition'];
-                                  if (contentType === 'application/pdf' && disposition && disposition.indexOf('attachment') !== -1) {
-                                    const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
-                                    const matches = filenameRegex.exec(disposition);
-                                    if (matches != null && matches[1]) {
-                                      const filename = `referhr_${jobId}.pdf`;
-                                      await response.buffer().then(buffer => {
-                                        const pdfBuffer = Buffer.from(buffer, 'base64');
-                                        require('fs').writeFileSync(`./jd/referhr/${filename}`, pdfBuffer);
-                                      });
-                            
-                                      writeLog(jobLink, `Downloaded file: ${filename}`);
-                                      // Resolve the promise to indicate that the download is complete
-                                      resolve(filename);
-                                    }
-                                  }
-                                });
-                              });
-                            };
-              
-              
-                          writeLog(jobLink, "start Click download");
-                          //CLICK DOWNLOAD FILE 
-                          // await page.click('.ant-card-extra .ant-space-item:first-child'); // some button that triggers file selection
-
-                          const downloadBtn = await page.waitForXPath('//div[contains(text(), "Download JD")]', { timeout: 20000 }); // Waits for 10 seconds
-                          await downloadBtn.click();
-                          await downloadFile(page, jobId);
-
-                      
                           //test
                           jobData.updated_at = moment().format('YYYY-MM-DD hh:mm:ss');
 
