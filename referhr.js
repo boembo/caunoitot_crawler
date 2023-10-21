@@ -246,17 +246,17 @@ async function run(){
  
     const form = new FormData();
     form.append('crawledJobId', JSON.stringify(crawledJobId));
-    // const response = await axios.post('http://localhost:3000/api/saveCrawlData/recruitery_completed', form, {
-    //   headers: {
-    //     ...form.getHeaders(),
-    //   },
-    // });
-
-    const response = await axios.post('https://viecthom.com/api/saveCrawlData/recruitery_completed', form, {
+    const response = await axios.post('http://localhost:3000/api/saveCrawlData/referhr_completed', form, {
       headers: {
         ...form.getHeaders(),
       },
     });
+
+    // const response = await axios.post('https://viecthom.com/api/saveCrawlData/referhr_completed', form, {
+    //   headers: {
+    //     ...form.getHeaders(),
+    //   },
+    // });
 
     console.log("Sent COMPLETED API");
 

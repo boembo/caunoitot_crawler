@@ -36,17 +36,17 @@ const ignoreList = {
     'Working hours': 'company_working_hour'
   }
   
-  var headerAttributes = {
-    gross_month_salary: "Gross Monthly salary",
-    total_vacancies: "Total vacancies:",
-    level: "Level",
-    employment_type: "Employment type",
-    job_address: "Address",
-    is_it_job: "Types",
-    job_team_size: "Team size",
-    //note may be multiple location : "Ha noi, Da Nang"
-    job_location: "Location",
-  };
+  // var headerAttributes = {
+  //   gross_month_salary: "Gross Monthly salary",
+  //   total_vacancies: "Total vacancies:",
+  //   level: "Level",
+  //   employment_type: "Employment type",
+  //   job_address: "Address",
+  //   is_it_job: "Types",
+  //   job_team_size: "Team size",
+  //   //note may be multiple location : "Ha noi, Da Nang"
+  //   job_location: "Location",
+  // };
 
 
   
@@ -233,16 +233,16 @@ async function collectJobDetails(page, jobLink) {
                             writeLog(jobLink,jobLocation);
   
                             writeLog(jobLink, "jobLocation ");
-                            jobData.job_location = jobLocation;
+                            jobData.job_location = jobLocation + " (Canada)";
 
 
                             let grossSalary = '';
-                          const grossSalaryElement = await page.$('.job-details p.font-weight-bold'); 
+                          const grossSalaryElement = await page.$eval('.job-details .col .font-weight-bold'); 
                           if(grossSalaryElement) {
-                            grossSalary = await page.evaluate(element => element.textContent, grossSalary);
+                            grossSalary = await page.evaluate(element => element.textContent, grossSalaryElement);
                           }
                           writeLog(jobLink, "grossSalary name " + grossSalary);
-                          jobData.gross_month_salary = grossSalary;
+                          jobData.gross_month_salary = grossSalary + " (CAD)";
 
               
 
@@ -301,7 +301,21 @@ async function collectJobDetails(page, jobLink) {
                           jobData.job_full_description = fullDescription;
 
                           writeLog(jobLink, "full job desc " + fullDescription);
+
+
+
+                          let overview_html = '';
+                          let overViewElement = await page.$eval('.job_details:nth-child(2) .col-lg-10'); 
+                          if(overViewElement) {
+                            overview_html = await page.evaluate(element => element.innerHTML, overViewElement);
+                          }
+                          jobData.overview_html = overview_html;
+
+                          writeLog(jobLink, "full overview desc " + overViewElement);
               
+
+
+
                           //GET COMPANY DETAIL
                           let companyName = '';
                           const companyNameElement = await page.$('.company-details div:first-child p.font-weight-bold');
