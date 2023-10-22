@@ -222,19 +222,16 @@ async function collectJobDetails(page, jobLink) {
                           writeLog(jobLink, "TITLE ");
                           jobData.title = jobTitle;
 
+                            const jobLocation = await page.evaluate(() => {
+                              const salaryElement = document.querySelector('.job-location');
+                              return salaryElement ? salaryElement.textContent.trim() : null;
+                            });
 
-
-                          const jobLocation = await page.$eval(
-                            '.job-location',
-                                element => element.textContent
-                            );                        
-  
-                            console.log('Job title:', jobLocation);
-                            writeLog(jobLink,jobLocation);
+                            // console.log('Job title:', jobLocation);
+                            // writeLog(jobLink,jobLocation);
   
                             writeLog(jobLink, "jobLocation ");
-                            jobData.job_location = jobLocation + " (Canada)";
-
+                            jobData.job_location = jobLocation ? jobLocation + " (Canada)" : "";
 
 
 
@@ -324,15 +321,28 @@ async function collectJobDetails(page, jobLink) {
 
 
 
-                          let overview_html = '';
-                          let overViewElement = await page.$eval('.job_details:nth-child(2) .col-lg-10'); 
-                          if(overViewElement) {
-                            overview_html = await page.evaluate(element => element.innerHTML, overViewElement);
-                          }
-                          jobData.overview_html = overview_html;
+                          // Find the second div with the class "job-details"
 
-                          writeLog(jobLink, "full overview desc " + overViewElement);
-              
+                          let overview_html = "";
+
+                           overview_html = await page.evaluate(() => {
+                            const jobDetailsDivs = document.querySelector('.job-details div:nth-child(2) div:nth-child(2)');
+                            if (jobDetailsDivs) {
+                              return jobDetailsDivs.innerHTML;
+                            } else {
+                              return "";
+                            }
+                          });
+                         
+                          jobData.overview_html = overview_html;
+                          
+
+
+
+                          // const jobLocation = await page.evaluate(() => {
+                          //   const salaryElement = document.querySelector('.job-location');
+                          //   return salaryElement ? salaryElement.textContent.trim() : null;
+                          // });
 
 
 
