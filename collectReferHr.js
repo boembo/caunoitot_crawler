@@ -236,15 +236,35 @@ async function collectJobDetails(page, jobLink) {
                             jobData.job_location = jobLocation + " (Canada)";
 
 
-                            let grossSalary = '';
-                          const grossSalaryElement = await page.$eval('.job-details .col .font-weight-bold'); 
-                          if(grossSalaryElement) {
-                            grossSalary = await page.evaluate(element => element.textContent, grossSalaryElement);
-                          }
+
+
+
+                            const jobType = await page.$eval(
+                              '.company-details strong',
+                                  element => element.textContent
+                              );                        
+    
+                              console.log('Job type:', jobType);
+                              writeLog(jobLink,jobType);
+    
+                              writeLog(jobLink, "jobType ");
+                              jobData.job_work_type = jobType;
+
+
+                            // let grossSalary = '';
+
+                            const grossSalary = await page.evaluate(() => {
+                              const salaryElement = document.querySelector('.job-details p.font-weight-bold');
+                              return salaryElement ? salaryElement.textContent.trim() : null;
+                            });
+
+                          // const grossSalaryElement = await page.$eval('.job-details .col .font-weight-bold'); 
+                          // if(grossSalaryElement) {
+                          //   grossSalary = await page.evaluate(element => element.textContent, grossSalaryElement);
+                          // }
                           writeLog(jobLink, "grossSalary name " + grossSalary);
                           jobData.gross_month_salary = grossSalary + " (CAD)";
 
-              
 
 
 
