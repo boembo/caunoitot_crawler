@@ -245,7 +245,7 @@ async function collectJobDetails(page, jobLink) {
                               writeLog(jobLink,jobType);
     
                               writeLog(jobLink, "jobType ");
-                              jobData.job_work_type = jobType;
+                              jobData.job_work_type = jobType ? jobType.replace(':', '') : '';
 
 
                             // let grossSalary = '';
