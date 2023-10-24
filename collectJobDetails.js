@@ -259,13 +259,11 @@ async function collectJobDetails(page, jobLink) {
                               jobData[key] = headerContent.trim();
                           }
                           
-                          const jobMemoElement = await page.$('div.ant-alert-message div[class*=job-detail_job-detail__notice]');
+                          const jobMemoElement = await page.$('.ant-alert-message div[class*="job-detail_job-detail__notice-text"]');
                           if(jobMemoElement) {
-                              if(jobMemoElement.length > 0) {
-                              const jobMemo = await page.evaluate(element => element.textContent, jobMemoElement);
-                              writeLog(jobLink, "job memo  " + jobMemo);
-                              jobData.memo = jobMemo;
-                            };
+                            const jobMemo = await page.evaluate(element => element.innerHTML, jobMemoElement);
+                            writeLog(jobLink, "job memo  " + jobMemo);
+                            jobData.memo = jobMemo;
                           }
                           //END JOB HEADER ATTRIBUTES
               
