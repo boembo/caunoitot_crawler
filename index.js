@@ -23,7 +23,7 @@ async function run(){
     const browserPool = await Promise.all(
       Array.from({ length: MAX_BROWSERS }).map(() => puppeteer.launch(
         {
-          headless: false,
+          headless: true,
           ignoreHTTPSErrors: true,
           //executablePath: 'C:/Program Files/Google/Chrome/Application/chrome.exe',
          args: ["--disable-notifications", "--no-sandbox"],
@@ -80,6 +80,7 @@ async function run(){
         return a.textContent.trim();
       });
 
+    //  const maxPage = 1;
       console.log('maxpage');
       console.log(maxPage);
 
@@ -246,19 +247,21 @@ async function run(){
       }
     
 
-      // Send the form data to the API
-    // const response = await axios.post('https://viecthom.com/api/saveCrawlData/recruitery_completed', form, {
+  
+    const form = new FormData();
+    form.append('crawledJobId', JSON.stringify(crawledJobId));
+    // const response = await axios.post('http://localhost:3000/api/saveCrawlData/recruitery_completed', form, {
     //   headers: {
     //     ...form.getHeaders(),
     //   },
     // });
-    const form = new FormData();
-    form.append('crawledJobId', JSON.stringify(crawledJobId));
-    const response = await axios.post('http://localhost:3000/api/saveCrawlData/recruitery_completed', form, {
-      headers: {
-        ...form.getHeaders(),
-      },
-    });
+
+        // Send the form data to the API
+        const response = await axios.post('https://viecthom.com/api/saveCrawlData/recruitery_completed', form, {
+          headers: {
+            ...form.getHeaders(),
+          },
+        });
 
     console.log("Sent COMPLETED API");
 
