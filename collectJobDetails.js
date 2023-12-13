@@ -264,6 +264,8 @@ async function collectJobDetails(page, jobLink) {
                             const jobMemo = await page.evaluate(element => element.innerHTML, jobMemoElement);
                             writeLog(jobLink, "job memo  " + jobMemo);
                             jobData.memo = jobMemo.replace('Recruitery', 'Viecthom').replace('recruitery', 'Viecthom');
+                          } else {
+                            jobData.memo = "";
                           }
                           //END JOB HEADER ATTRIBUTES
               
