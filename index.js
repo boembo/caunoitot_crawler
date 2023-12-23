@@ -15,8 +15,8 @@ const mySqlConnection = mysql.createConnection({
   database: 'caunoitot',
 });
 
-const MAX_CONCURRENCY = 2;
-const MAX_BROWSERS = 4;
+const MAX_CONCURRENCY = 4;
+const MAX_BROWSERS = 8;
 
 async function run(){
 
