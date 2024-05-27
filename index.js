@@ -16,7 +16,7 @@ const mySqlConnection = mysql.createConnection({
 });
 
 const MAX_CONCURRENCY = 4;
-const MAX_BROWSERS = 8;
+const MAX_BROWSERS = 4;
 
 async function run(){
 
@@ -59,8 +59,8 @@ async function run(){
     //selected Ha noi, HCM, Japan, Danang
     //Just Select Headhunting
     const startPage = 1;
-    const recruiteryURL = "https://app.recruitery.co/jobs?advance=30%2C40%2C10&status=5&page=";
-    await page.goto('https://app.recruitery.co/jobs?page=1&advance=10%2C30%2C40&status=5', {
+    const recruiteryURL = "https://app.aniday.com/jobs?advance=30%2C40%2C10&status=5&page=";
+    await page.goto('https://app.aniday.com/jobs?page=1&advance=10%2C30%2C40&status=5', {
         waitUntil: 'domcontentloaded',
         timeout: 90000
     });
@@ -147,7 +147,7 @@ async function run(){
         console.log('found pagination selector');
 
 
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        await new Promise(resolve => setTimeout(resolve, 1000));
  
 
 
@@ -172,7 +172,7 @@ async function run(){
   
           allJobLinks.push(...jobLinks);
           //Wait 2 second before go next page
-          await new Promise(resolve => setTimeout(resolve, 5000)); 
+          await new Promise(resolve => setTimeout(resolve, 3000)); 
 
       }
 
@@ -206,7 +206,7 @@ async function run(){
 
           console.log('start crawling' + jobUrl);
 
-          await new Promise(resolve => setTimeout(resolve, 2000));
+          await new Promise(resolve => setTimeout(resolve, 1000));
     
           try {
             // Collect job details here
@@ -222,7 +222,7 @@ async function run(){
           } finally {
             await page.close();
 
-            await new Promise(resolve => setTimeout(resolve, 2000));
+            await new Promise(resolve => setTimeout(resolve, 1000));
 
             const index = pageQueue.indexOf(pagePromise);
             if (index >= 0) {

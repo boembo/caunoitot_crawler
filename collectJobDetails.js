@@ -124,7 +124,7 @@ async function sendCrawledDataAndPDF(jobData, jobId) {
     console.log('Crawled data and PDF sent to the API.');
 
     // Introduce a 2-second delay before returning
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise(resolve => setTimeout(resolve, 1000));
 
     return response;
 
@@ -144,7 +144,7 @@ async function collectJobDetails(page, jobLink) {
             await page.goto(jobLink);
 
             try {
-                await page.waitForNavigation({ timeout: 50000, waitUntil: 'networkidle2' });
+                await page.waitForNavigation({ timeout: 30000, waitUntil: 'networkidle2' });
                 
 
             } catch (err) {
@@ -161,7 +161,7 @@ async function collectJobDetails(page, jobLink) {
 
                       const jobId = jobLink.match(/jobs\/(\d+)/)[1];            
                       //UNcomment FOR TESTING
-                      // await page.goto("https://app.recruitery.co/jobs/9286");
+                      // await page.goto("https://app.aniday.com/jobs/9286");
                       // await page.waitForNavigation({ waitUntil: 'networkidle2' });
                       // const jobId = 9286;
                       const client = await page.target().createCDPSession(); 
