@@ -105,17 +105,17 @@ async function sendCrawledDataAndPDF(jobData, jobId) {
     form.append('companyLogoBase64', companyLogo);
 
     // Send the form data to the API
-    // const response = await axios.post('https://viecthom.com/api/saveCrawlData/referhr', form, {
-    //   headers: {
-    //     ...form.getHeaders(),
-    //   },
-    // });
-
-    const response = await axios.post('http://localhost:3000/api/saveCrawlData/referhr', form, {
+    const response = await axios.post('https://viecthom.com/api/saveCrawlData/referhr', form, {
       headers: {
         ...form.getHeaders(),
       },
     });
+
+    // const response = await axios.post('http://localhost:3000/api/saveCrawlData/referhr', form, {
+    //   headers: {
+    //     ...form.getHeaders(),
+    //   },
+    // });
 
 
     console.log('Crawled data and PDF sent to the API.');

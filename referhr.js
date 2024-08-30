@@ -90,7 +90,7 @@ async function run(){
 
 
       //MUST DELETE TEST CODE
-      const maxPage = 1;
+      const maxPage = 5;
 
         // Get the job links from all pages and split them into chunks for parallel processing
       const allJobLinks = [];
@@ -246,7 +246,7 @@ async function run(){
  
     const form = new FormData();
     form.append('crawledJobId', JSON.stringify(crawledJobId));
-    const response = await axios.post('http://localhost:3000/api/saveCrawlData/referhr_completed', form, {
+    const response = await axios.post('https://viecthom.com/api/saveCrawlData/referhr_completed', form, {
       headers: {
         ...form.getHeaders(),
       },
